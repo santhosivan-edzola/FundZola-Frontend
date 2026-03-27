@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background-color: #F5F0EB;
+    color: #1A1A1A;
+  }
+  h1, h2, h3 {
+    font-family: 'DM Serif Display', Georgia, serif;
+  }
+}
+
+@layer components {
+  .ez-card {
+    @apply bg-white rounded-xl shadow-sm border;
+    border-color: #ede5dc;
+  }
+  .ez-section-title {
+    font-family: 'DM Serif Display', Georgia, serif;
+    @apply text-base;
+    color: #1A1A1A;
+  }
+  .ez-link {
+    @apply text-xs font-semibold transition-colors;
+    color: #E8967A;
+  }
+  .ez-link:hover {
+    color: #d4836a;
+  }
+  .ez-table th {
+    @apply text-xs font-semibold uppercase tracking-wider py-3 px-4;
+    background-color: #F5F0EB;
+    border-bottom: 1px solid #ede5dc;
+    color: #6b6b6b;
+  }
+  .ez-table td {
+    @apply text-sm py-3 px-4;
+    border-bottom: 1px solid #ede5dc;
+    color: #1A1A1A;
+  }
+  .ez-table tr:last-child td {
+    border-bottom: none;
+  }
+  .ez-table tr:hover td {
+    background-color: #fdfcfb;
+  }
+  .ez-input {
+    @apply w-full rounded-lg px-3 py-2 text-sm transition-colors;
+    border: 1px solid #e0d4c8;
+    background-color: #ffffff;
+    color: #1A1A1A;
+    outline: none;
+  }
+  .ez-input::placeholder {
+    color: #9a9a9a;
+  }
+  .ez-input:focus {
+    border-color: #E8967A;
+    box-shadow: 0 0 0 3px rgba(232, 150, 122, 0.18);
+  }
+  .ez-label {
+    @apply block text-xs font-semibold mb-1.5 tracking-wide;
+    color: #1A1A1A;
+  }
+}
