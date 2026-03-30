@@ -12,6 +12,8 @@ function normalizeDonor(d) {
     donorType: d.donor_type ?? d.donorType,
     panNumber: d.pan_number ?? d.panNumber,
     pan: d.pan_number ?? d.pan,
+    aadhaar: d.aadhaar_number ?? d.aadhaar,
+    aadhaarNumber: d.aadhaar_number ?? d.aadhaarNumber,
     isActive: d.is_active !== undefined ? Boolean(d.is_active) : (d.isActive !== false),
     createdAt: d.created_at ?? d.createdAt,
     updatedAt: d.updated_at ?? d.updatedAt,
@@ -52,8 +54,9 @@ export function DonorProvider({ children }) {
     email:      data.email,
     phone:      data.phone,
     address:    data.address,
-    pan_number: data.pan_number ?? data.panNumber ?? data.pan,
-    donor_type: data.donor_type ?? data.donorType,
+    pan_number:     data.pan_number     ?? data.panNumber     ?? data.pan,
+    aadhaar_number: data.aadhaar_number ?? data.aadhaarNumber ?? data.aadhaar,
+    donor_type:     data.donor_type     ?? data.donorType,
   });
 
   const addDonor = useCallback(async (data) => {

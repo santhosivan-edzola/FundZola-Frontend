@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { DONOR_TYPES } from '../../constants';
-import { validateEmail, validatePhone, validatePAN, validateRequired } from '../../utils/validators';
+import { validateEmail, validatePhone, validatePAN, validateAadhaar, validateRequired } from '../../utils/validators';
 
 const emptyForm = {
   name: '',
@@ -11,18 +11,20 @@ const emptyForm = {
   phone: '',
   address: '',
   pan: '',
+  aadhaar: '',
   donorType: '',
 };
 
 export function DonorForm({ initialData = {}, onSubmit, onCancel }) {
   const [form, setForm] = useState({
     ...emptyForm,
-    name:      initialData.name      || '',
-    email:     initialData.email     || '',
-    phone:     initialData.phone     || '',
-    address:   initialData.address   || '',
-    pan:       initialData.pan       || initialData.pan_number  || initialData.panNumber  || '',
-    donorType: initialData.donorType || initialData.donor_type  || '',
+    name: initialData.name || '',
+    email: initialData.email || '',
+    phone: initialData.phone || '',
+    address: initialData.address || '',
+    pan: initialData.pan || initialData.pan_number || initialData.panNumber || '',
+    aadhaar: initialData.aadhaar || initialData.aadhaar_number || initialData.aadhaarNumber || '',
+    donorType: initialData.donorType || initialData.donor_type || '',
   });
   const [errors, setErrors] = useState({});
 
@@ -48,6 +50,11 @@ export function DonorForm({ initialData = {}, onSubmit, onCancel }) {
       if (!panV.valid) newErrors.pan = panV.message;
     }
 
+    if (form.aadhaar) {
+      const aadhaarV = validateAadhaar(form.aadhaar);
+      if (!aadhaarV.valid) newErrors.aadhaar = aadhaarV.message;
+    }
+
     const typeV = validateRequired(form.donorType, 'Donor Type');
     if (!typeV.valid) newErrors.donorType = typeV.message;
 
@@ -61,13 +68,13 @@ export function DonorForm({ initialData = {}, onSubmit, onCancel }) {
       setErrors(errs);
       return;
     }
-    onSubmit({ ...form, pan: form.pan.toUpperCase() });
+    onSubmit({ ...form, pan: form.pan.toUpperCase(), aadhaar: form.aadhaar.replace(/\s/g, '') });
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Input
-        label="Full Name"
+        label="Full Namfffcccfffe"
         name="name"
         value={form.name}
         onChange={handleChange}
@@ -115,20 +122,29 @@ export function DonorForm({ initialData = {}, onSubmit, onCancel }) {
           hint="Required for 80G receipts"
           className="uppercase"
         />
-        <Select
-          label="Donor Type"
-          name="donorType"
-          value={form.donorType}
+        <Input
+          label="Aadhaar Number"
+          name="aadhaar"
+          value={form.aadhaar}
           onChange={handleChange}
-          error={errors.donorType}
-          required
-          options={DONOR_TYPES.map((t) => ({ value: t, label: t }))}
-          placeholder="Select type"
+          error={errors.aadhaar}
+          placeholder="1234 5678 9012"
+          hint="12-digit Aadhaar number"
         />
       </div>
+      <Select
+        label="Donor Type"
+        name="donorType"
+        value={form.donorType}
+        onChange={handleChange}
+        error={errors.donorType}
+        required
+        options={DONOR_TYPES.map((t) => ({ value: t, label: t }))}
+        placeholder="Select type"
+      />
       <div className="flex justify-end gap-3 pt-3 mt-2 border-t border-cream-200 sticky bottom-0 bg-white pb-1">
         <Button type="button" variant="secondary" onClick={onCancel}>
-          Cancel
+          Cancelfffff
         </Button>
         <Button type="submit" variant="primary">
           {initialData.id ? 'Update Donor' : 'Add Donor'}
