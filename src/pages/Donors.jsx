@@ -12,7 +12,7 @@ import { Badge } from '../components/ui/Badge';
 import { ViewSwitcher } from '../components/ui/ViewSwitcher';
 import { CalendarGrid } from '../components/ui/CalendarGrid';
 import { DONOR_TYPES } from '../constants';
-import { validateEmail, validatePhone, validatePAN, validateRequired } from '../utils/validators';
+import { validateEmail, validatePhone, validatePAN, validateAadhaar, validateRequired } from '../utils/validators';
 
 const PAGE_SIZE = 10;
 
@@ -29,12 +29,13 @@ const DEFAULT_TYPE_META = { color: '#E8967A', bg: '#FDF0EB' };
 // ── Inline Add/Edit Form ───────────────────────────────────────────────────────
 function DonorFormPanel({ initialData = {}, onSubmit, onCancel, loading }) {
   const [form, setForm] = useState({
-    name:      initialData.name      || '',
-    email:     initialData.email     || '',
-    phone:     initialData.phone     || '',
-    address:   initialData.address   || '',
-    pan:       initialData.pan       || initialData.pan_number  || '',
-    donorType: initialData.donorType || initialData.donor_type  || '',
+    name:      initialData.name        || '',
+    email:     initialData.email       || '',
+    phone:     initialData.phone       || '',
+    address:   initialData.address     || '',
+    pan:       initialData.pan         || initialData.pan_number   || '',
+    aadhaar:   initialData.aadhaar     || initialData.aadhaar_number || '',
+    donorType: initialData.donorType   || initialData.donor_type  || '',
   });
   const [errors, setErrors] = useState({});
 
@@ -52,6 +53,7 @@ function DonorFormPanel({ initialData = {}, onSubmit, onCancel, loading }) {
     if (!emailV.valid) errs.email = emailV.message;
     if (form.phone) { const phoneV = validatePhone(form.phone); if (!phoneV.valid) errs.phone = phoneV.message; }
     if (form.pan) { const panV = validatePAN(form.pan); if (!panV.valid) errs.pan = panV.message; }
+    if (form.aadhaar) { const aadhaarV = validateAadhaar(form.aadhaar); if (!aadhaarV.valid) errs.aadhaar = aadhaarV.message; }
     const typeV = validateRequired(form.donorType, 'Donor Type');
     if (!typeV.valid) errs.donorType = typeV.message;
     return errs;
@@ -61,7 +63,7 @@ function DonorFormPanel({ initialData = {}, onSubmit, onCancel, loading }) {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
-    onSubmit({ ...form, pan: form.pan ? form.pan.toUpperCase() : '' });
+    onSubmit({ ...form, pan: form.pan ? form.pan.toUpperCase() : '', aadhaar: form.aadhaar ? form.aadhaar.replace(/\s/g, '') : '' });
   };
 
   return (
@@ -83,9 +85,12 @@ function DonorFormPanel({ initialData = {}, onSubmit, onCancel, loading }) {
         <Input label="Address" name="address" value={form.address} onChange={handleChange} placeholder="Street, City, State" />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input label="PAN Number" name="pan" value={form.pan} onChange={handleChange} error={errors.pan} placeholder="ABCDE1234F" hint="Required for 80G receipts" />
+          <Input label="Aadhaar Number" name="aadhaar" value={form.aadhaar} onChange={handleChange} error={errors.aadhaar} placeholder="1234 5678 9012" hint="12-digit Aadhaar number" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select label="Donor Type" name="donorType" value={form.donorType} onChange={handleChange} error={errors.donorType} required
             options={DONOR_TYPES.map(t => ({ value: t, label: t }))} placeholder="Select type" />
-        </div>
+</div>
         <div className="flex gap-3 pt-2 border-t border-cream-200 sticky bottom-0 bg-white pb-1">
           <Button type="submit" variant="primary" disabled={loading}>{loading ? 'Saving...' : initialData.id ? 'Update Donor' : 'Add Donor'}</Button>
           <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
@@ -209,6 +214,7 @@ export function Donors() {
   const [saving, setSaving]           = useState(false);
   // optimistic overrides for DnD
   const [overrides, setOverrides]     = useState({});
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const displayDonors = useMemo(() =>
     donors.map(d => overrides[d.id] ? { ...d, ...overrides[d.id] } : d),
@@ -277,57 +283,76 @@ export function Donors() {
   const activeDonorCount = donors.filter(d => d.isActive !== undefined ? d.isActive : Boolean(d.is_active)).length;
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
+    <div style={{ background: '#E8E2DB', minHeight: '100vh', padding: '20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+      {/* ── Page Header ─────────────────────────────────────────── */}
+      <div style={{ background: 'linear-gradient(135deg, #E8967A 0%, #d4806a 100%)', borderRadius: 14, padding: '18px 24px', boxShadow: '0 4px 16px rgba(232,150,122,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1 className="font-serif text-xl text-ez-dark">Donors</h1>
-          <p className="text-xs text-ez-muted mt-0.5">{activeDonorCount} active donors</p>
+          <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 700, margin: 0, fontFamily: 'serif' }}>Donors</h1>
+          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, margin: '3px 0 0' }}>{activeDonorCount} active donors</p>
         </div>
         {!showForm && canCreate && (
-          <Button variant="primary" onClick={() => openAdd()}
-            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>}>
+          <button onClick={() => openAdd()}
+            style={{ background: '#fff', color: '#E8967A', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
             Add Donor
-          </Button>
+          </button>
         )}
       </div>
 
+      {/* ── Add / Edit Form ─────────────────────────────────────── */}
       {showForm && (
-        <DonorFormPanel initialData={editDonor || {}} onSubmit={handleSubmit} onCancel={closeForm} loading={saving} />
+        <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', border: '2px solid #E8967A', overflow: 'hidden' }}>
+          <div style={{ background: 'linear-gradient(90deg, #FDF0EB, #fff)', borderBottom: '1px solid #F0E8E4', padding: '12px 20px' }}>
+            <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: '#E8967A', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              {editDonor?.id ? '✎ Edit Donor' : '＋ New Donor'}
+            </p>
+          </div>
+          <div style={{ padding: '0' }}>
+            <DonorFormPanel initialData={editDonor || {}} onSubmit={handleSubmit} onCancel={closeForm} loading={saving} />
+          </div>
+        </div>
       )}
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl border border-cream-200 shadow-card p-4">
-        <div className="flex flex-wrap gap-3 items-center">
+      {/* ── Filters ─────────────────────────────────────────────── */}
+      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
+        <div onClick={() => setFiltersOpen(v => !v)} style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+          <svg width="13" height="13" fill="none" stroke="#aaa" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M7 12h10M11 20h2" /></svg>
+          <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Filters</span>
+          <svg width="14" height="14" fill="none" stroke="#aaa" viewBox="0 0 24 24" style={{ marginLeft: 'auto', transition: 'transform 0.2s', transform: filtersOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+        </div>
+        {filtersOpen && <div style={{ padding: '14px 20px', display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
           <SearchBar value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search name, email or PAN..." className="w-64" />
           <Select name="typeFilter" value={typeFilter}
             onChange={e => { setTypeFilter(e.target.value); setPage(1); }}
             options={DONOR_TYPES.map(t => ({ value: t, label: t }))} placeholder="All Types" className="w-36" />
-          <div className="flex rounded-lg border border-cream-300 overflow-hidden text-xs">
+          <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid #D8D0C8', fontSize: 12 }}>
             {[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }, { value: 'all', label: 'All' }].map(opt => (
               <button key={opt.value} type="button"
                 onClick={() => { setStatusFilter(opt.value); setPage(1); }}
-                className="px-3 py-2 font-medium transition-colors"
-                style={{ backgroundColor: statusFilter === opt.value ? '#E8967A' : '#fff', color: statusFilter === opt.value ? '#1A1A1A' : '#6b6b6b' }}>
+                style={{ padding: '7px 14px', fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 0.15s', backgroundColor: statusFilter === opt.value ? '#E8967A' : '#F7F4F1', color: statusFilter === opt.value ? '#fff' : '#555' }}>
                 {opt.label}
               </button>
             ))}
           </div>
-          <span className="text-xs text-ez-muted">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</span>
-          <div className="ml-auto"><ViewSwitcher view={view} onChange={setView} /></div>
-        </div>
+          <span style={{ fontSize: 12, color: '#999', background: '#F0EDE9', borderRadius: 20, padding: '4px 10px', fontWeight: 600 }}>
+            {filtered.length} result{filtered.length !== 1 ? 's' : ''}
+          </span>
+          <div style={{ marginLeft: 'auto' }}><ViewSwitcher view={view} onChange={setView} /></div>
+        </div>}
       </div>
 
-      {/* Content */}
+      {/* ── Content ─────────────────────────────────────────────── */}
       {loading && !donors.length ? (
-        <div className="text-center py-12 text-ez-muted text-sm">Loading donors...</div>
+        <div style={{ textAlign: 'center', padding: '48px 0', background: '#fff', borderRadius: 14, color: '#999', fontSize: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
+          Loading donors…
+        </div>
       ) : filtered.length === 0 && view === 'list' ? (
-        <div className="text-center py-16 bg-white rounded-xl border border-cream-200 shadow-card">
-          <div className="text-5xl mb-3">👤</div>
-          <p className="font-semibold text-ez-dark">No donors found</p>
-          <p className="text-ez-muted text-sm mt-1 mb-4">{donors.length === 0 ? 'Add your first donor to get started' : 'Try adjusting filters'}</p>
+        <div style={{ textAlign: 'center', padding: '64px 0', background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>👤</div>
+          <p style={{ fontWeight: 600, color: '#1A1A1A', margin: '0 0 6px' }}>No donors found</p>
+          <p style={{ color: '#999', fontSize: 13, margin: '0 0 20px' }}>{donors.length === 0 ? 'Add your first donor to get started' : 'Try adjusting filters'}</p>
           {donors.length === 0 && !showForm && canCreate && <Button variant="primary" onClick={() => openAdd()}>Add First Donor</Button>}
         </div>
       ) : view === 'kanban' ? (
@@ -342,45 +367,65 @@ export function Donors() {
         />
       ) : (
         <>
-          <div className="bg-white rounded-xl border border-cream-200 shadow-card overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm ez-table">
+          <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.09)' }}>
+            {/* Table section label */}
+            <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg width="13" height="13" fill="none" stroke="#aaa" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" /></svg>
+                <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Donor List</span>
+              </div>
+              <span style={{ color: '#666', fontSize: 11, background: '#3D3D3D', borderRadius: 12, padding: '2px 10px' }}>{filtered.length} total</span>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
-                  <tr>
-                    <th className="text-left">Name</th>
-                    <th className="text-left">Email</th>
-                    <th className="text-left">Phone</th>
-                    <th className="text-left">PAN</th>
-                    <th className="text-left">Type</th>
-                    <th className="text-left">Status</th>
-                    <th className="text-right">Actions</th>
+                  <tr style={{ background: '#F7F4F1', borderBottom: '2px solid #E8E0D8' }}>
+                    {['Name', 'Email', 'Phone', 'PAN', 'Type', 'Status', 'Actions'].map((h, i) => (
+                      <th key={h} style={{ padding: '11px 16px', textAlign: i === 6 ? 'right' : 'left', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>{h}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {paginated.map(donor => {
+                  {paginated.map((donor, idx) => {
                     const isActive = donor.isActive !== undefined ? donor.isActive : Boolean(donor.is_active);
                     return (
-                      <tr key={donor.id}>
-                        <td>
-                          <button onClick={() => navigate(`/donors/${donor.id}`)} className="font-medium hover:underline text-left" style={{ color: '#E8967A' }}>{donor.name}</button>
+                      <tr key={donor.id}
+                        style={{ background: idx % 2 === 0 ? '#fff' : '#FDFAF8', borderBottom: '1px solid #F0EDE9', transition: 'background 0.12s' }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#FDF0EB'}
+                        onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? '#fff' : '#FDFAF8'}>
+                        <td style={{ padding: '12px 16px' }}>
+                          <button onClick={() => navigate(`/donors/${donor.id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, color: '#E8967A', fontSize: 13, padding: 0 }}
+                            onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                            onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}>
+                            {donor.name}
+                          </button>
                         </td>
-                        <td className="text-ez-muted">{donor.email || '—'}</td>
-                        <td className="text-ez-muted">{donor.phone || '—'}</td>
-                        <td className="font-mono text-xs text-ez-muted">{donor.pan || donor.pan_number || '—'}</td>
-                        <td><Badge variant="info" size="sm">{donor.donorType || donor.donor_type || '—'}</Badge></td>
-                        <td><Badge variant={isActive !== false ? 'success' : 'gray'} size="sm">{isActive !== false ? 'Active' : 'Inactive'}</Badge></td>
-                        <td>
-                          <div className="flex items-center justify-end gap-1">
-                            <button onClick={() => navigate(`/donors/${donor.id}`)} title="View" className="p-1.5 rounded-lg hover:bg-cream-100 text-ez-muted hover:text-ez-dark transition-colors">
+                        <td style={{ padding: '12px 16px', color: '#666', fontSize: 13 }}>{donor.email || '—'}</td>
+                        <td style={{ padding: '12px 16px', color: '#666', fontSize: 13 }}>{donor.phone || '—'}</td>
+                        <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: 12, color: '#888' }}>{donor.pan || donor.pan_number || '—'}</td>
+                        <td style={{ padding: '12px 16px' }}><Badge variant="info" size="sm">{donor.donorType || donor.donor_type || '—'}</Badge></td>
+                        <td style={{ padding: '12px 16px' }}><Badge variant={isActive !== false ? 'success' : 'gray'} size="sm">{isActive !== false ? 'Active' : 'Inactive'}</Badge></td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                            <button onClick={() => navigate(`/donors/${donor.id}`)} title="View"
+                              style={{ padding: '5px', borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: '#999' }}
+                              onMouseEnter={e => { e.currentTarget.style.background = '#F0EDE9'; e.currentTarget.style.color = '#555'; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#999'; }}>
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                             </button>
                             {canEdit && (
-                              <button onClick={() => openEdit(donor)} title="Edit" className="p-1.5 rounded-lg hover:bg-cream-100 transition-colors" style={{ color: '#E8967A' }}>
+                              <button onClick={() => openEdit(donor)} title="Edit"
+                                style={{ padding: '5px', borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: '#E8967A' }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#FDF0EB'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                               </button>
                             )}
                             {canDelete && isActive !== false && (
-                              <button onClick={() => setDeleteTarget(donor)} title="Deactivate" className="p-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors">
+                              <button onClick={() => setDeleteTarget(donor)} title="Deactivate"
+                                style={{ padding: '5px', borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: '#f87171' }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#FEF2F2'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
                               </button>
                             )}
@@ -393,10 +438,11 @@ export function Donors() {
               </table>
             </div>
           </div>
+
           {totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-ez-muted">Page {page} of {totalPages}</p>
-              <div className="flex gap-2">
+            <div style={{ background: '#fff', borderRadius: 14, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 2px 8px rgba(0,0,0,0.07)', border: '1px solid #E8E0D8' }}>
+              <p style={{ fontSize: 12, color: '#999', margin: 0 }}>Page <strong style={{ color: '#555' }}>{page}</strong> of {totalPages}</p>
+              <div style={{ display: 'flex', gap: 8 }}>
                 <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
                 <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</Button>
               </div>

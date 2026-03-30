@@ -230,6 +230,7 @@ export function Donations() {
   const [deleteTarget, setDeleteTarget]     = useState(null);
   const [selectedDonation, setSelectedDonation] = useState(null);
   const [overrides, setOverrides]           = useState({});
+  const [filtersOpen, setFiltersOpen]       = useState(false);
 
   const donorMap = useMemo(() => { const m = {}; donors.forEach(d => { m[d.id] = d; }); return m; }, [donors]);
 
@@ -318,17 +319,18 @@ export function Donations() {
   const handleDayClick = (dateStr) => openAdd({ date: dateStr });
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
+    <div style={{ background: '#E8E2DB', minHeight: '100vh', padding: '20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Page Header */}
+      <div style={{ background: 'linear-gradient(135deg, #E8967A 0%, #d4806a 100%)', borderRadius: 14, padding: '18px 24px', boxShadow: '0 4px 16px rgba(232,150,122,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1 className="font-serif text-xl text-ez-dark">Donations</h1>
-          <p className="text-xs text-ez-muted mt-0.5">{donations.length} total · {formatCurrency(donations.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0))} raised</p>
+          <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 700, margin: 0, fontFamily: 'serif' }}>Donations</h1>
+          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, margin: '3px 0 0' }}>{donations.length} total · {formatCurrency(donations.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0))} raised</p>
         </div>
         {canCreate && (
-          <Button variant="primary" onClick={() => openAdd()}
-            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>}>
+          <button onClick={() => openAdd()} style={{ background: '#fff', color: '#E8967A', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
             Add Donation
-          </Button>
+          </button>
         )}
       </div>
 
@@ -338,23 +340,30 @@ export function Donations() {
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-cream-200 shadow-card p-4 space-y-3">
-        <div className="flex flex-wrap gap-3 items-center">
-          <SearchBar value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search donor, receipt, fund..." className="w-64" />
-          <Select name="fundFilter" value={fundFilter} onChange={e => { setFundFilter(e.target.value); setPage(1); }} options={FUND_CATEGORIES.map(f => ({ value: f, label: f }))} placeholder="All Funds" className="w-40" />
-          <Select name="modeFilter" value={modeFilter} onChange={e => { setModeFilter(e.target.value); setPage(1); }} options={PAYMENT_MODES.map(m => ({ value: m, label: m }))} placeholder="All Modes" className="w-40" />
-          <Select name="g80Filter" value={g80Filter} onChange={e => { setG80Filter(e.target.value); setPage(1); }} options={[{ value: 'yes', label: '80G: Yes' }, { value: 'no', label: '80G: No' }]} placeholder="80G: All" className="w-36" />
-          <div className="ml-auto"><ViewSwitcher view={view} onChange={setView} /></div>
+      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
+        <div onClick={() => setFiltersOpen(v => !v)} style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+          <svg width="13" height="13" fill="none" stroke="#aaa" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M7 12h10M11 20h2" /></svg>
+          <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Filters</span>
+          <svg width="14" height="14" fill="none" stroke="#aaa" viewBox="0 0 24 24" style={{ marginLeft: 'auto', transition: 'transform 0.2s', transform: filtersOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
         </div>
-        <div className="flex flex-wrap gap-3 items-center">
-          <Input name="dateFrom" type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} className="w-40" />
-          <span className="text-ez-muted text-xs">to</span>
-          <Input name="dateTo" type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} className="w-40" />
-          {(search || fundFilter || modeFilter || g80Filter || dateFrom || dateTo) && (
-            <Button variant="ghost" size="sm" onClick={() => { setSearch(''); setFundFilter(''); setModeFilter(''); setG80Filter(''); setDateFrom(''); setDateTo(''); setPage(1); }}>Clear filters</Button>
-          )}
-          <span className="text-xs text-ez-muted ml-auto">{filtered.length} result{filtered.length !== 1 ? 's' : ''} · {formatCurrency(totalAmount)}</span>
-        </div>
+        {filtersOpen && <div style={{ padding: '14px 20px' }} className="space-y-3">
+          <div className="flex flex-wrap gap-3 items-center">
+            <SearchBar value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search donor, receipt, fund..." className="w-64" />
+            <Select name="fundFilter" value={fundFilter} onChange={e => { setFundFilter(e.target.value); setPage(1); }} options={FUND_CATEGORIES.map(f => ({ value: f, label: f }))} placeholder="All Funds" className="w-40" />
+            <Select name="modeFilter" value={modeFilter} onChange={e => { setModeFilter(e.target.value); setPage(1); }} options={PAYMENT_MODES.map(m => ({ value: m, label: m }))} placeholder="All Modes" className="w-40" />
+            <Select name="g80Filter" value={g80Filter} onChange={e => { setG80Filter(e.target.value); setPage(1); }} options={[{ value: 'yes', label: '80G: Yes' }, { value: 'no', label: '80G: No' }]} placeholder="80G: All" className="w-36" />
+            <div className="ml-auto"><ViewSwitcher view={view} onChange={setView} /></div>
+          </div>
+          <div className="flex flex-wrap gap-3 items-center">
+            <Input name="dateFrom" type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} className="w-40" />
+            <span className="text-ez-muted text-xs">to</span>
+            <Input name="dateTo" type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} className="w-40" />
+            {(search || fundFilter || modeFilter || g80Filter || dateFrom || dateTo) && (
+              <Button variant="ghost" size="sm" onClick={() => { setSearch(''); setFundFilter(''); setModeFilter(''); setG80Filter(''); setDateFrom(''); setDateTo(''); setPage(1); }}>Clear filters</Button>
+            )}
+            <span className="text-xs text-ez-muted ml-auto">{filtered.length} result{filtered.length !== 1 ? 's' : ''} · {formatCurrency(totalAmount)}</span>
+          </div>
+        </div>}
       </div>
 
       {view === 'kanban' ? (
@@ -374,9 +383,19 @@ export function Donations() {
         />
       ) : (
         <>
-          <DonationTable donations={paginated} donors={donors} onEdit={canEdit ? handleEdit : null} onDelete={canDelete ? d => setDeleteTarget(d) : null} onReceipt={handleReceipt} onView={handleView} />
+          {/* Donation List Card */}
+          <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.09)' }}>
+            <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg width="13" height="13" fill="none" stroke="#aaa" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Donation List</span>
+              </div>
+              <span style={{ color: '#666', fontSize: 11, background: '#3D3D3D', borderRadius: 12, padding: '2px 10px' }}>{filtered.length} total</span>
+            </div>
+            <DonationTable donations={paginated} donors={donors} onEdit={canEdit ? handleEdit : null} onDelete={canDelete ? d => setDeleteTarget(d) : null} onReceipt={handleReceipt} onView={handleView} />
+          </div>
           {totalPages > 1 && (
-            <div className="flex items-center justify-between">
+            <div style={{ background: '#fff', borderRadius: 14, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 2px 8px rgba(0,0,0,0.07)', border: '1px solid #E8E0D8' }}>
               <p className="text-xs text-ez-muted">Page {page} of {totalPages}</p>
               <div className="flex gap-2">
                 <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>

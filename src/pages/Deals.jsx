@@ -242,15 +242,19 @@ function KanbanView({ deals, onEdit, onDelete, onStageChange }) {
 // ── List View ──────────────────────────────────────────────────────────────────
 function ListView({ deals, onEdit, onDelete, onStageChange }) {
   if (!deals.length) return (
-    <div className="text-center py-16 bg-white rounded-xl border border-cream-200 shadow-card">
+    <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.09)', textAlign: 'center', padding: '64px 0' }}>
       <p className="font-semibold text-ez-dark">No deals found</p>
       <p className="text-ez-muted text-sm mt-1">Add your first deal to get started</p>
     </div>
   );
 
   return (
-    <div className="bg-white rounded-xl border border-cream-200 shadow-card overflow-hidden">
-      <div className="overflow-x-auto">
+    <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.09)' }}>
+      <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Deal List</span>
+        <span style={{ color: '#666', fontSize: 11, background: '#3D3D3D', borderRadius: 12, padding: '2px 10px' }}>{deals.length} total</span>
+      </div>
+      <div style={{ overflowX: 'auto' }}>
         <table className="w-full text-sm ez-table">
           <thead>
             <tr>
@@ -356,6 +360,7 @@ export function Deals() {
   const [prefilledDate, setPrefilledDate] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return deals.filter(d => {
@@ -420,88 +425,91 @@ export function Deals() {
   };
 
   return (
-    <div className="space-y-5">
+    <div style={{ background: '#E8E2DB', minHeight: '100vh', padding: '20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div style={{ background: 'linear-gradient(135deg, #E8967A 0%, #d4806a 100%)', borderRadius: 14, padding: '18px 24px', boxShadow: '0 4px 16px rgba(232,150,122,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1 className="font-serif text-xl text-ez-dark">Deals</h1>
-          <p className="text-xs text-ez-muted mt-0.5">
+          <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 700, margin: 0, fontFamily: 'serif' }}>Deals</h1>
+          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, margin: '3px 0 0' }}>
             {deals.filter(d => d.stage !== 'Closed Lost').length} active · Pipeline {formatCurrency(totalPipeline)} · Received {formatCurrency(totalReceived)}
           </p>
         </div>
         {!showForm && canCreate && (
-          <Button variant="primary" onClick={openAdd}
-            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>}>
+          <button onClick={openAdd} style={{ background: '#fff', color: '#E8967A', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
             Add Deal
-          </Button>
+          </button>
         )}
       </div>
 
       {/* Inline form */}
       {showForm && (
-        <div className="bg-white rounded-xl border border-cream-200 shadow-card p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="font-serif text-lg text-ez-dark">{editDeal ? 'Edit Deal' : 'New Deal'}</h2>
-            <button onClick={closeForm} className="text-ez-muted hover:text-ez-dark transition-colors p-1">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+        <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', border: '2px solid #E8967A', overflow: 'hidden' }}>
+          <div style={{ background: 'linear-gradient(90deg, #FDF0EB, #fff)', borderBottom: '1px solid #F0E8E4', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: '#E8967A', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{editDeal ? '✎ Edit Deal' : '＋ New Deal'}</p>
+            <button onClick={closeForm} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: 18, lineHeight: 1 }}>×</button>
           </div>
-          <DealForm initialData={editDeal || (prefilledDate ? { expectedDate: prefilledDate } : {})} donors={donors} onSubmit={handleSubmit} onCancel={closeForm} loading={saving} />
+          <div style={{ padding: '20px 24px' }}>
+            <DealForm initialData={editDeal || (prefilledDate ? { expectedDate: prefilledDate } : {})} donors={donors} onSubmit={handleSubmit} onCancel={closeForm} loading={saving} />
+          </div>
         </div>
       )}
 
       {/* Toolbar */}
-      <div className="bg-white rounded-xl border border-cream-200 shadow-card p-4">
-        <div className="flex flex-wrap gap-3 items-center">
-          {/* Search */}
-          <div className="relative">
-            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ez-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search deals or donor..."
-              className="pl-8 pr-3 py-1.5 text-xs rounded-lg border border-cream-300 bg-cream-50 focus:outline-none focus:ring-2 w-52"
-              style={{ '--tw-ring-color': '#E8967A' }} />
-          </div>
-
-          {/* Stage filter */}
-          <select value={stageFilter} onChange={e => setStageFilter(e.target.value)}
-            className="text-xs px-3 py-1.5 rounded-lg border border-cream-300 bg-cream-50 focus:outline-none text-ez-dark">
-            <option value="">All Stages</option>
-            {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-
-          {(search || stageFilter) && (
-            <button onClick={() => { setSearch(''); setStageFilter(''); }}
-              className="text-xs text-ez-muted hover:text-ez-dark transition-colors">
-              Clear
-            </button>
-          )}
-
-          <span className="text-xs text-ez-muted ml-auto">{filtered.length} deal{filtered.length !== 1 ? 's' : ''}</span>
-
-          {/* View switcher */}
-          <div className="flex rounded-lg border border-cream-300 overflow-hidden">
-            {VIEWS.map(v => (
-              <button key={v.id} onClick={() => setView(v.id)}
-                title={v.label}
-                className="p-2 transition-colors"
-                style={{
-                  backgroundColor: view === v.id ? '#E8967A' : '#fff',
-                  color: view === v.id ? '#1A1A1A' : '#888',
-                }}>
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={v.icon} />
-                </svg>
-              </button>
-            ))}
-          </div>
+      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
+        <div onClick={() => setFiltersOpen(v => !v)} style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+          <svg width="13" height="13" fill="none" stroke="#aaa" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M7 12h10M11 20h2" /></svg>
+          <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Filters</span>
+          <svg width="14" height="14" fill="none" stroke="#aaa" viewBox="0 0 24 24" style={{ marginLeft: 'auto', transition: 'transform 0.2s', transform: filtersOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
         </div>
+        {filtersOpen && <div style={{ padding: '14px 20px' }}>
+          <div className="flex flex-wrap gap-3 items-center">
+            {/* Search */}
+            <div className="relative">
+              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ez-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="Search deals or donor..."
+                className="pl-8 pr-3 py-1.5 text-xs rounded-lg border border-cream-300 bg-cream-50 focus:outline-none focus:ring-2 w-52"
+                style={{ '--tw-ring-color': '#E8967A' }} />
+            </div>
+
+            {/* Stage filter */}
+            <select value={stageFilter} onChange={e => setStageFilter(e.target.value)}
+              className="text-xs px-3 py-1.5 rounded-lg border border-cream-300 bg-cream-50 focus:outline-none text-ez-dark">
+              <option value="">All Stages</option>
+              {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+
+            {(search || stageFilter) && (
+              <button onClick={() => { setSearch(''); setStageFilter(''); }}
+                className="text-xs text-ez-muted hover:text-ez-dark transition-colors">
+                Clear
+              </button>
+            )}
+
+            <span className="text-xs text-ez-muted ml-auto">{filtered.length} deal{filtered.length !== 1 ? 's' : ''}</span>
+
+            {/* View switcher */}
+            <div className="flex rounded-lg border border-cream-300 overflow-hidden">
+              {VIEWS.map(v => (
+                <button key={v.id} onClick={() => setView(v.id)}
+                  title={v.label}
+                  className="p-2 transition-colors"
+                  style={{
+                    backgroundColor: view === v.id ? '#E8967A' : '#fff',
+                    color: view === v.id ? '#1A1A1A' : '#888',
+                  }}>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={v.icon} />
+                  </svg>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>}
       </div>
 
       {/* Stage summary pills */}

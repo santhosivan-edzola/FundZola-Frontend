@@ -207,6 +207,7 @@ export function Programs() {
   const [editing, setEditing] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return programs.filter(p => {
@@ -247,59 +248,71 @@ export function Programs() {
   const canCreate = hasPermission('programs', 'can_create');
 
   return (
-    <div className="p-6 space-y-5">
+    <div style={{ background: '#E8E2DB', minHeight: '100vh', padding: '20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Page header */}
-      <div className="flex items-center justify-between gap-4">
+      <div style={{ background: 'linear-gradient(135deg, #E8967A 0%, #d4806a 100%)', borderRadius: 14, padding: '18px 24px', boxShadow: '0 4px 16px rgba(232,150,122,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1 className="text-lg font-bold" style={{ color: '#eee' }}>Programs</h1>
-          <p className="text-xs mt-0.5" style={{ color: '#666' }}>Fundraising programs with budget planning and deal tracking</p>
+          <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 700, margin: 0, fontFamily: 'serif' }}>Programs</h1>
+          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, margin: '3px 0 0' }}>Fundraising programs with budget planning and deal tracking</p>
         </div>
         {canCreate && (
-          <button onClick={() => { setEditing(null); setShowForm(true); }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold"
-            style={{ background: '#E8967A', color: '#1A1A1A' }}>
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
+          <button onClick={() => { setEditing(null); setShowForm(true); }} style={{ background: '#fff', color: '#E8967A', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
             Add Program
           </button>
         )}
       </div>
 
       {/* Search + status tabs */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-        <input
-          value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Search programs…"
-          className="rounded-lg border px-3 py-2 text-xs w-full sm:w-56 focus:outline-none focus:ring-2 focus:ring-ez-accent"
-          style={{ background: '#141414', borderColor: '#333', color: '#eee' }} />
-        <div className="flex gap-1 flex-wrap">
-          {STATUS_TABS.map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-              style={activeTab === tab
-                ? { background: '#E8967A', color: '#1A1A1A' }
-                : { background: '#2a2a2a', color: '#888', border: '1px solid #333' }}>
-              {tab}
-            </button>
-          ))}
+      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
+        <div onClick={() => setFiltersOpen(v => !v)} style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+          <svg width="13" height="13" fill="none" stroke="#aaa" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M7 12h10M11 20h2" /></svg>
+          <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Filters</span>
+          <svg width="14" height="14" fill="none" stroke="#aaa" viewBox="0 0 24 24" style={{ marginLeft: 'auto', transition: 'transform 0.2s', transform: filtersOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
         </div>
+        {filtersOpen && <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+            <input
+              value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search programs…"
+              className="rounded-lg border px-3 py-2 text-xs w-full sm:w-56 focus:outline-none focus:ring-2 focus:ring-ez-accent"
+              style={{ background: '#F5F0EB', borderColor: '#D5CFC8', color: '#1A1A1A' }} />
+            <div className="flex gap-1 flex-wrap">
+              {STATUS_TABS.map(tab => (
+                <button key={tab} onClick={() => setActiveTab(tab)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  style={activeTab === tab
+                    ? { background: '#E8967A', color: '#fff' }
+                    : { background: '#F0EBE5', color: '#666', border: '1px solid #D5CFC8' }}>
+                  {tab}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>}
       </div>
 
       {/* Summary bar */}
       {programs.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { label: 'Total Programs', value: programs.length },
-            { label: 'Active', value: programs.filter(p => p.status === 'Active').length },
-            { label: 'Total Budget', value: fmt(programs.reduce((s, p) => s + p.estimatedBudget, 0)) },
-            { label: 'Total Collected', value: fmt(programs.reduce((s, p) => s + p.collectedAmount, 0)) },
-          ].map(s => (
-            <div key={s.label} className="rounded-lg px-4 py-3" style={{ background: '#1E1E1E', border: '1px solid #2a2a2a' }}>
-              <p className="text-xs" style={{ color: '#666' }}>{s.label}</p>
-              <p className="text-sm font-bold mt-0.5" style={{ color: '#eee' }}>{s.value}</p>
+        <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
+          <div style={{ background: '#2D2D2D', padding: '10px 20px' }}>
+            <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Summary</span>
+          </div>
+          <div style={{ padding: '14px 20px' }}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: 'Total Programs', value: programs.length },
+                { label: 'Active', value: programs.filter(p => p.status === 'Active').length },
+                { label: 'Total Budget', value: fmt(programs.reduce((s, p) => s + p.estimatedBudget, 0)) },
+                { label: 'Total Collected', value: fmt(programs.reduce((s, p) => s + p.collectedAmount, 0)) },
+              ].map(s => (
+                <div key={s.label} className="rounded-lg px-4 py-3" style={{ background: '#1E1E1E', border: '1px solid #2a2a2a' }}>
+                  <p className="text-xs" style={{ color: '#666' }}>{s.label}</p>
+                  <p className="text-sm font-bold mt-0.5" style={{ color: '#eee' }}>{s.value}</p>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       )}
 
@@ -326,12 +339,20 @@ export function Programs() {
         </div>
       )}
       {!loading && !error && filtered.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map(p => (
-            <ProgramCard key={p.id} program={p}
-              onEdit={handleEdit}
-              onDelete={prog => setConfirmDelete(prog)} />
-          ))}
+        <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
+          <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Programs</span>
+            <span style={{ color: '#666', fontSize: 11, background: '#3D3D3D', borderRadius: 12, padding: '2px 10px' }}>{filtered.length} total</span>
+          </div>
+          <div style={{ padding: '16px 20px' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filtered.map(p => (
+                <ProgramCard key={p.id} program={p}
+                  onEdit={handleEdit}
+                  onDelete={prog => setConfirmDelete(prog)} />
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
