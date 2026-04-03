@@ -47,6 +47,7 @@ export function DonationForm({ initialData = {}, onSubmit, onCancel }) {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const val = type === 'checkbox' ? checked : value;
+    console.log("value", val);
     setForm((prev) => ({ ...prev, [name]: val }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
