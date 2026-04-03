@@ -7,7 +7,7 @@ import { validateAmount, validateRequired } from '../../utils/validators';
 import { useDonors } from '../../hooks/useDonors';
 
 const emptyForm = {
-  donorId: '',
+  donorId: '',  
   amount: '',
   date: new Date().toISOString().split('T')[0],
   paymentMode: '',
