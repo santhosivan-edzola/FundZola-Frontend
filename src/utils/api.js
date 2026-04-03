@@ -7,7 +7,7 @@ function getToken() {
   } catch { return null; }
 }
 
-function headers(extra = {}) {
+function headers(extra = {}) {    
   const token = getToken();
   return {
     'Content-Type': 'application/json',
