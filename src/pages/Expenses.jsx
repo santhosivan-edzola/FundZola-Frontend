@@ -16,7 +16,7 @@ import { ExpenseTable } from '../components/expenses/ExpenseTable';
 import { EXPENSE_CATEGORIES, FUND_CATEGORIES } from '../constants';
 import { formatCurrency, formatDate } from '../utils/formatters';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 200];
 
 const CAT_META = {
   Salaries:          { color: '#E8967A', bg: '#FDF0EB' },
@@ -36,6 +36,8 @@ const DEFAULT_CAT_META = { color: '#8ECFCA', bg: '#E8F7F6' };
 function ExpenseKanban({ expenses, allCats, onEdit, onMove, canEdit }) {
   const draggedId = useRef(null);
   const [dragOverCol, setDragOverCol] = useState(null);
+  const [collapsed, setCollapsed] = useState({});
+  const toggleCollapse = (cat) => setCollapsed(p => ({ ...p, [cat]: !p[cat] }));
 
   const handleDragStart = (e, id) => { draggedId.current = id; e.dataTransfer.effectAllowed = 'move'; };
   const handleDragOver  = (e, cat) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverCol(cat); };
@@ -45,65 +47,92 @@ function ExpenseKanban({ expenses, allCats, onEdit, onMove, canEdit }) {
   };
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: '50vh' }}>
+    <div style={{ padding: '12px 16px' }}>
+    <div className="flex gap-3 pb-2" style={{ minHeight: '50vh', alignItems: 'stretch', width: '100%' }}>
       {allCats.map(cat => {
         const cards = expenses.filter(e => (e.category || 'Other') === cat);
         const total = cards.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
         const meta = CAT_META[cat] || DEFAULT_CAT_META;
         const isOver = dragOverCol === cat;
+        const isCollapsed = !!collapsed[cat];
         return (
           <div key={cat}
-            className="flex-shrink-0 w-56 flex flex-col rounded-xl overflow-hidden border transition-all"
-            style={{ borderColor: isOver ? meta.color : '#E8E0D8', boxShadow: isOver ? `0 0 0 2px ${meta.color}44` : 'none' }}
+            className="flex flex-col rounded-xl overflow-hidden border transition-all"
+            style={{ flex: '1 1 0', minWidth: isCollapsed ? 44 : 120, maxWidth: isCollapsed ? 80 : 'none',
+              borderColor: isOver ? meta.color : '#E8E0D8', boxShadow: isOver ? `0 0 0 2px ${meta.color}44` : 'none',
+              transition: 'max-width 0.2s ease, min-width 0.2s ease' }}
             onDragOver={e => handleDragOver(e, cat)}
             onDragLeave={() => setDragOverCol(null)}
             onDrop={e => handleDrop(e, cat)}>
-            <div className="px-3 py-2.5 flex items-center justify-between"
-              style={{ backgroundColor: isOver ? meta.color + '33' : meta.bg, borderBottom: `2px solid ${meta.color}` }}>
-              <div>
-                <p className="text-xs font-bold" style={{ color: meta.color }}>{cat}</p>
-                <p className="text-xs text-ez-muted">{formatCurrency(total)}</p>
-              </div>
-              <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ backgroundColor: meta.color + '33', color: meta.color }}>{cards.length}</span>
+            <div style={{ height: 20, backgroundColor: meta.color, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 4 }}>
+              <button onClick={() => toggleCollapse(cat)} title={isCollapsed ? 'Expand' : 'Collapse'}
+                style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1, padding: '1px 3px', borderRadius: 3, background: 'transparent' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.15)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={isCollapsed ? 'M9 5l7 7-7 7' : 'M15 19l-7-7 7-7'} />
+                </svg>
+              </button>
             </div>
-            <div className="flex-1 p-2 space-y-2 overflow-y-auto transition-colors"
-              style={{ minHeight: '150px', backgroundColor: isOver ? meta.color + '11' : '#FAF7F4' }}>
-              {cards.map(exp => (
-                <div key={exp.id}
-                  draggable
-                  onDragStart={e => handleDragStart(e, exp.id)}
-                  onDragEnd={() => { draggedId.current = null; setDragOverCol(null); }}
-                  className="bg-white rounded-lg border p-3 space-y-1.5 group cursor-grab active:cursor-grabbing hover:shadow-sm transition-shadow select-none"
-                  style={{ borderColor: '#E8E0D8' }}>
-                  <div className="flex items-start justify-between gap-1">
-                    <p className="text-xs font-semibold text-ez-dark leading-snug flex-1 truncate">{exp.description || '—'}</p>
-                    {canEdit && (
-                      <button onClick={() => onEdit(exp)} className="opacity-0 group-hover:opacity-100 p-0.5 rounded transition-all flex-shrink-0" style={{ color: '#E8967A' }}>
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                      </button>
-                    )}
+            {isCollapsed ? (
+              <div className="flex flex-col items-center gap-2 py-3 cursor-pointer select-none"
+                style={{ backgroundColor: meta.bg, flex: 1 }} onClick={() => toggleCollapse(cat)}>
+                <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
+                  style={{ backgroundColor: meta.color, color: '#fff' }}>{cards.length}</span>
+                <span className="text-xs font-bold"
+                  style={{ color: meta.color, writingMode: 'vertical-rl', textOrientation: 'mixed', transform: 'rotate(180deg)', letterSpacing: '0.05em' }}>{cat}</span>
+              </div>
+            ) : (
+              <>
+                <div className="px-3 pt-2 pb-2"
+                  style={{ backgroundColor: isOver ? meta.color + '18' : meta.bg, borderBottom: `1px solid ${meta.color}55` }}>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold tracking-wide flex-1" style={{ color: meta.color }}>{cat}</span>
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ backgroundColor: meta.color, color: '#fff' }}>{cards.length}</span>
                   </div>
-                  {exp.vendor && <p className="text-xs text-ez-muted">{exp.vendor}</p>}
-                  <p className="text-sm font-bold text-ez-dark">{formatCurrency(exp.amount)}</p>
-                  <p className="text-xs text-ez-muted">{formatDate(exp.date || exp.expense_date)}</p>
-                  {(exp.fundCategory || exp.fund_category) && (
-                    <span className="inline-flex px-1.5 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: '#E8F7F6', color: '#8ECFCA' }}>
-                      {exp.fundCategory || exp.fund_category}
-                    </span>
+                  <p className="text-xs font-bold mt-1" style={{ color: meta.color }}>
+                    {total > 0 ? formatCurrency(total) : <span style={{ color: meta.color + '55' }}>—</span>}
+                  </p>
+                </div>
+                <div className="flex-1 p-2 space-y-2 overflow-y-auto transition-colors"
+                  style={{ minHeight: '150px', backgroundColor: isOver ? meta.color + '11' : '#FAF7F4' }}>
+                  {cards.map(exp => (
+                    <div key={exp.id} draggable
+                      onDragStart={e => handleDragStart(e, exp.id)}
+                      onDragEnd={() => { draggedId.current = null; setDragOverCol(null); }}
+                      className="bg-white rounded-lg border p-3 space-y-1.5 group cursor-grab active:cursor-grabbing hover:shadow-sm transition-shadow select-none"
+                      style={{ borderColor: '#E8E0D8' }}>
+                      <div className="flex items-start justify-between gap-1">
+                        <p className="text-xs font-semibold text-ez-dark leading-snug flex-1 truncate">{exp.description || '—'}</p>
+                        {canEdit && (
+                          <button onClick={() => onEdit(exp)} className="opacity-0 group-hover:opacity-100 p-0.5 rounded transition-all flex-shrink-0" style={{ color: '#E8967A' }}>
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                          </button>
+                        )}
+                      </div>
+                      {exp.vendor && <p className="text-xs text-ez-muted">{exp.vendor}</p>}
+                      <p className="text-sm font-bold text-ez-dark">{formatCurrency(exp.amount)}</p>
+                      <p className="text-xs text-ez-muted">{formatDate(exp.date || exp.expense_date)}</p>
+                      {(exp.fundCategory || exp.fund_category) && (
+                        <span className="inline-flex px-1.5 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: '#E8F7F6', color: '#8ECFCA' }}>
+                          {exp.fundCategory || exp.fund_category}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                  {cards.length === 0 && (
+                    <div className="flex items-center justify-center h-20 border-2 border-dashed rounded-lg text-xs text-ez-muted" style={{ borderColor: isOver ? meta.color : '#E8E0D8' }}>
+                      {isOver ? 'Drop here' : 'No expenses'}
+                    </div>
                   )}
                 </div>
-              ))}
-              {cards.length === 0 && (
-                <div className="flex items-center justify-center h-20 border-2 border-dashed rounded-lg text-xs text-ez-muted"
-                  style={{ borderColor: isOver ? meta.color : '#E8E0D8' }}>
-                  {isOver ? 'Drop here' : 'No expenses'}
-                </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
         );
       })}
+    </div>
     </div>
   );
 }
@@ -119,12 +148,14 @@ export function Expenses() {
   const toast = useToast();
 
   const [view, setView]             = useState('list');
+  const [addHovered, setAddHovered] = useState(false);
   const [search, setSearch]         = useState('');
   const [catFilter, setCatFilter]   = useState('');
   const [fundFilter, setFundFilter] = useState('');
   const [dateFrom, setDateFrom]     = useState('');
   const [dateTo, setDateTo]         = useState('');
   const [page, setPage]             = useState(1);
+  const [pageSize, setPageSize]     = useState(10);
   const [modalOpen, setModalOpen]   = useState(false);
   const [editExpense, setEditExpense]       = useState(null);
   const [prefilledDate, setPrefilledDate]   = useState('');
@@ -160,8 +191,8 @@ export function Expenses() {
   }, [displayExpenses, search, catFilter, fundFilter, dateFrom, dateTo]);
 
   const totalAmount = useMemo(() => filtered.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0), [filtered]);
-  const totalPages  = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated   = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages  = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginated   = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const allCats = useMemo(() => {
     const s = new Set(expenses.map(e => e.category || 'Other'));
@@ -214,19 +245,6 @@ export function Expenses() {
   return (
     <div style={{ background: '#E8E2DB', minHeight: '100vh', padding: '20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-      {/* Page Header */}
-      <div style={{ background: 'linear-gradient(135deg, #E8967A 0%, #d4806a 100%)', borderRadius: 14, padding: '18px 24px', boxShadow: '0 4px 16px rgba(232,150,122,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 700, margin: 0, fontFamily: 'serif' }}>Expenses</h1>
-          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, margin: '3px 0 0' }}>{expenses.length} total · {formatCurrency(expenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0))} expended</p>
-        </div>
-        {canCreate && (
-          <button onClick={() => openAdd()} style={{ background: '#fff', color: '#E8967A', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
-            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-            Add Expense
-          </button>
-        )}
-      </div>
 
       {/* Fund Balance Cards */}
       {Object.keys(fundBalanceMap).length > 0 && (
@@ -261,7 +279,6 @@ export function Expenses() {
             <SearchBar value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search description, vendor..." className="w-64" />
             <Select name="catFilter" value={catFilter} onChange={e => { setCatFilter(e.target.value); setPage(1); }} options={EXPENSE_CATEGORIES.map(c => ({ value: c, label: c }))} placeholder="All Categories" className="w-44" />
             <Select name="fundFilter" value={fundFilter} onChange={e => { setFundFilter(e.target.value); setPage(1); }} options={availableFunds.map(f => ({ value: f, label: f }))} placeholder="All Funds" className="w-40" />
-            <div className="ml-auto"><ViewSwitcher view={view} onChange={setView} /></div>
           </div>
           <div className="flex flex-wrap gap-3 items-center">
             <Input name="dateFrom" type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} className="w-40" />
@@ -275,38 +292,54 @@ export function Expenses() {
         </div>}
       </div>
 
-      {view === 'kanban' ? (
-        <ExpenseKanban expenses={filtered} allCats={allCats} onEdit={e => openEdit(e)} onMove={canEdit ? handleMove : () => {}} canEdit={canEdit} />
-      ) : view === 'calendar' ? (
-        <CalendarGrid
-          items={filtered}
-          getDate={e => (e.date || e.expense_date || '').slice(0, 10)}
-          renderDot={e => { const meta = CAT_META[e.category] || DEFAULT_CAT_META; return { label: e.description || e.category || '—', color: meta.color, bg: meta.bg }; }}
-          onItemClick={e => openEdit(e)}
-          onDayClick={handleDayClick}
-        />
-      ) : (
-        <>
-          {/* Expense Table */}
-          <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.09)' }}>
-            <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Expense List</span>
-              <span style={{ color: '#666', fontSize: 11, background: '#3D3D3D', borderRadius: 12, padding: '2px 10px' }}>{filtered.length} total</span>
-            </div>
-            <ExpenseTable expenses={paginated} donations={donations} onEdit={canEdit ? e => openEdit(e) : null} onDelete={canDelete ? e => setDeleteTarget(e) : null} />
+      {/* Content */}
+      <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.09)' }}>
+        <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Expense List</span>
+            <span style={{ color: '#666', fontSize: 11, background: '#3D3D3D', borderRadius: 12, padding: '2px 10px' }}>{filtered.length} total</span>
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {canCreate && (
+              <button onClick={() => openAdd()} onMouseEnter={() => setAddHovered(true)} onMouseLeave={() => setAddHovered(false)}
+                title="Add Expense"
+                style={{ background: '#E8967A', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, transition: 'all 0.15s' }}>
+                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                {addHovered && <span style={{ whiteSpace: 'nowrap' }}>Add</span>}
+              </button>
+            )}
+            <ViewSwitcher view={view} onChange={setView} />
+          </div>
+        </div>
+        {view === 'kanban' ? (
+          <ExpenseKanban expenses={filtered} allCats={allCats} onEdit={e => openEdit(e)} onMove={canEdit ? handleMove : () => {}} canEdit={canEdit} />
+        ) : view === 'calendar' ? (
+          <CalendarGrid
+            items={filtered}
+            getDate={e => (e.date || e.expense_date || '').slice(0, 10)}
+            renderDot={e => { const meta = CAT_META[e.category] || DEFAULT_CAT_META; return { label: e.description || e.category || '—', color: meta.color, bg: meta.bg }; }}
+            onItemClick={e => openEdit(e)}
+            onDayClick={handleDayClick}
+          />
+        ) : (
+          <ExpenseTable expenses={paginated} donations={donations} onEdit={canEdit ? e => openEdit(e) : null} onDelete={canDelete ? e => setDeleteTarget(e) : null} />
+        )}
+      </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <p className="text-xs text-ez-muted">Page {page} of {totalPages}</p>
-              <div className="flex gap-2">
-                <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
-                <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</Button>
-              </div>
-            </div>
-          )}
-        </>
+      {view === 'list' && (
+        <div style={{ background: '#FEF9C3', borderRadius: 14, padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid #FDE047' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 12, color: '#713F12' }}>Page <strong>{page}</strong> of {totalPages} · {filtered.length} records</span>
+            <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
+              style={{ fontSize: 11, border: '1px solid #FDE047', borderRadius: 6, padding: '3px 6px', background: '#fff', color: '#713F12', fontWeight: 600, cursor: 'pointer' }}>
+              {PAGE_SIZE_OPTIONS.map(n => <option key={n} value={n}>{n} per page</option>)}
+            </select>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
+            <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</Button>
+          </div>
+        </div>
       )}
 
       <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); setEditExpense(null); setPrefilledDate(''); }}

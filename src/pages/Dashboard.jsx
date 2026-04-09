@@ -33,11 +33,11 @@ export function Dashboard() {
   if (isLoading) return <LoadingSpinner message="Loading dashboard..." />;
 
   return (
-    <div className="space-y-6">
+    <div style={{ background: '#E8E2DB', minHeight: '100vh', padding: '20px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
       {/* Hero banner */}
-      <div className="rounded-xl2 px-6 py-5 flex items-center justify-between"
-        style={{ background: 'linear-gradient(135deg, #1A1A1A 0%, #2a2a2a 100%)' }}>
+      <div className="px-6 py-5 flex items-center justify-between"
+        style={{ background: 'linear-gradient(135deg, #1A1A1A 0%, #2a2a2a 100%)', borderRadius: 14 }}>
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#8ECFCA' }}>
             Fund Management
@@ -113,50 +113,54 @@ export function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Fund utilization */}
-        <div className="lg:col-span-2 bg-white rounded-xl2 shadow-card border border-cream-200 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-serif text-base text-ez-dark">Fund Utilization</h2>
-            <Link to="/donations" className="ez-link">View all →</Link>
+        <div className="lg:col-span-2" style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
+          <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Fund Utilization</span>
+            <Link to="/donations" style={{ color: '#E8967A', fontSize: 11 }}>View all →</Link>
           </div>
-          <FundUtilizationBar byFund={byFund.slice(0, 6)} />
+          <div style={{ padding: '20px' }}>
+            <FundUtilizationBar byFund={byFund.slice(0, 6)} />
+          </div>
         </div>
 
         {/* Top donors */}
-        <div className="bg-white rounded-xl2 shadow-card border border-cream-200 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-serif text-base text-ez-dark">Top Donors</h2>
-            <Link to="/donors" className="ez-link">View all →</Link>
+        <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
+          <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Top Donors</span>
+            <Link to="/donors" style={{ color: '#E8967A', fontSize: 11 }}>View all →</Link>
           </div>
-          {byDonor.length === 0 ? (
-            <p className="text-sm text-ez-muted text-center py-8">No donors yet</p>
-          ) : (
-            <div className="space-y-3">
-              {byDonor.slice(0, 5).map((d, i) => (
-                <div key={d.donorId} className="flex items-center gap-3">
-                  <span className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: i === 0 ? '#E8967A' : '#F5F0EB', color: i === 0 ? '#fff' : '#6b6b6b' }}>
-                    {i + 1}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-ez-dark truncate">{d.donorName}</p>
-                    <p className="text-xs text-ez-muted">{d.donationCount} donation{d.donationCount !== 1 ? 's' : ''}</p>
+          <div style={{ padding: '20px' }}>
+            {byDonor.length === 0 ? (
+              <p className="text-sm text-ez-muted text-center py-8">No donors yet</p>
+            ) : (
+              <div className="space-y-3">
+                {byDonor.slice(0, 5).map((d, i) => (
+                  <div key={d.donorId} className="flex items-center gap-3">
+                    <span className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: i === 0 ? '#E8967A' : '#F5F0EB', color: i === 0 ? '#fff' : '#6b6b6b' }}>
+                      {i + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-ez-dark truncate">{d.donorName}</p>
+                      <p className="text-xs text-ez-muted">{d.donationCount} donation{d.donationCount !== 1 ? 's' : ''}</p>
+                    </div>
+                    <span className="text-sm font-semibold text-ez-dark whitespace-nowrap">
+                      {formatCurrency(d.totalDonated)}
+                    </span>
                   </div>
-                  <span className="text-sm font-semibold text-ez-dark whitespace-nowrap">
-                    {formatCurrency(d.totalDonated)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent donations */}
-        <div className="bg-white rounded-xl2 shadow-card border border-cream-200">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-cream-200">
-            <h2 className="font-serif text-base text-ez-dark">Recent Donations</h2>
-            <Link to="/donations" className="ez-link">View all →</Link>
+        <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
+          <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Recent Donations</span>
+            <Link to="/donations" style={{ color: '#E8967A', fontSize: 11 }}>View all →</Link>
           </div>
           {recentDonations.length === 0 ? (
             <p className="text-sm text-ez-muted text-center py-8">No donations yet</p>
@@ -184,10 +188,10 @@ export function Dashboard() {
         </div>
 
         {/* Recent expenses */}
-        <div className="bg-white rounded-xl2 shadow-card border border-cream-200">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-cream-200">
-            <h2 className="font-serif text-base text-ez-dark">Recent Expenses</h2>
-            <Link to="/expenses" className="ez-link">View all →</Link>
+        <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
+          <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Recent Expenses</span>
+            <Link to="/expenses" style={{ color: '#E8967A', fontSize: 11 }}>View all →</Link>
           </div>
           {recentExpenses.length === 0 ? (
             <p className="text-sm text-ez-muted text-center py-8">No expenses yet</p>
@@ -213,10 +217,10 @@ export function Dashboard() {
       </div>
 
       {/* Donor summary table */}
-      <div className="bg-white rounded-xl2 shadow-card border border-cream-200">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-cream-200">
-          <h2 className="font-serif text-base text-ez-dark">Donor Utilization Summary</h2>
-          <Link to="/donors" className="ez-link">View all donors →</Link>
+      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
+        <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Donor Utilization Summary</span>
+          <Link to="/donors" style={{ color: '#E8967A', fontSize: 11 }}>View all donors →</Link>
         </div>
         <DonorSummaryTable byDonor={byDonor} limit={5} />
       </div>

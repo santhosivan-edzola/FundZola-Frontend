@@ -4,6 +4,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D8D0C8;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #B8AFA6;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #D8D0C8 transparent;
+}
+
 @layer base {
   * { box-sizing: border-box; }
   body {

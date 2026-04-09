@@ -8,23 +8,24 @@ import { SearchBar } from '../components/ui/SearchBar';
 import { Select } from '../components/ui/Select';
 import { Input } from '../components/ui/Input';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { Modal } from '../components/ui/Modal';
 import { Badge } from '../components/ui/Badge';
 import { ViewSwitcher } from '../components/ui/ViewSwitcher';
 import { CalendarGrid } from '../components/ui/CalendarGrid';
 import { DONOR_TYPES } from '../constants';
 import { validateEmail, validatePhone, validatePAN, validateAadhaar, validateRequired } from '../utils/validators';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 200];
 
 const TYPE_META = {
-  Individual:  { color: '#E8967A', bg: '#FDF0EB' },
-  Corporate:   { color: '#7ab8e8', bg: '#EBF4FD' },
-  Trust:       { color: '#8ECFCA', bg: '#E8F7F6' },
-  Society:     { color: '#e8c07a', bg: '#FDF7EB' },
-  Foundation:  { color: '#b07ae8', bg: '#F5EBF9' },
-  Other:       { color: '#a0a0a0', bg: '#F5F5F5' },
+  Individual:  { color: '#E8967A', bg: '#FDF0EB', textColor: '#A8452A' },
+  Corporate:   { color: '#7ab8e8', bg: '#EBF4FD', textColor: '#1F6FA3' },
+  Trust:       { color: '#8ECFCA', bg: '#E8F7F6', textColor: '#1E7A74' },
+  Society:     { color: '#e8c07a', bg: '#FDF7EB', textColor: '#9A6B10' },
+  Foundation:  { color: '#b07ae8', bg: '#F5EBF9', textColor: '#6B28B0' },
+  Other:       { color: '#a0a0a0', bg: '#F5F5F5', textColor: '#555555' },
 };
-const DEFAULT_TYPE_META = { color: '#E8967A', bg: '#FDF0EB' };
+const DEFAULT_TYPE_META = { color: '#E8967A', bg: '#FDF0EB', textColor: '#A8452A' };
 
 // ── Inline Add/Edit Form ───────────────────────────────────────────────────────
 function DonorFormPanel({ initialData = {}, onSubmit, onCancel, loading }) {
@@ -104,91 +105,99 @@ function DonorFormPanel({ initialData = {}, onSubmit, onCancel, loading }) {
 function DonorKanban({ donors, onEdit, onView, onMove, canEdit }) {
   const draggedId = useRef(null);
   const [dragOverCol, setDragOverCol] = useState(null);
+  const [collapsed, setCollapsed] = useState({});
+  const toggleCollapse = (type) => setCollapsed(p => ({ ...p, [type]: !p[type] }));
 
-  const handleDragStart = (e, id) => {
-    draggedId.current = id;
-    e.dataTransfer.effectAllowed = 'move';
-  };
-  const handleDragOver = (e, type) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverCol(type);
-  };
+  const handleDragStart = (e, id) => { draggedId.current = id; e.dataTransfer.effectAllowed = 'move'; };
+  const handleDragOver = (e, type) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverCol(type); };
   const handleDrop = (e, type) => {
-    e.preventDefault();
-    setDragOverCol(null);
-    if (draggedId.current !== null) {
-      onMove(draggedId.current, type);
-      draggedId.current = null;
-    }
+    e.preventDefault(); setDragOverCol(null);
+    if (draggedId.current !== null) { onMove(draggedId.current, type); draggedId.current = null; }
   };
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: '50vh' }}>
+    <div style={{ padding: '12px 16px' }}>
+    <div className="flex gap-3 pb-2" style={{ minHeight: '50vh', alignItems: 'stretch', width: '100%' }}>
       {DONOR_TYPES.map(type => {
         const cards = donors.filter(d => (d.donorType || d.donor_type || 'Other') === type);
         const meta = TYPE_META[type] || DEFAULT_TYPE_META;
         const isOver = dragOverCol === type;
+        const isCollapsed = !!collapsed[type];
         return (
           <div key={type}
-            className="flex-shrink-0 w-52 flex flex-col rounded-xl overflow-hidden border transition-all"
-            style={{ borderColor: isOver ? meta.color : '#E8E0D8', boxShadow: isOver ? `0 0 0 2px ${meta.color}44` : 'none' }}
+            className="flex flex-col rounded-xl overflow-hidden border transition-all"
+            style={{ flex: '1 1 0', minWidth: isCollapsed ? 44 : 120, maxWidth: isCollapsed ? 80 : 'none',
+              borderColor: isOver ? meta.color : '#E8E0D8', boxShadow: isOver ? `0 0 0 2px ${meta.color}44` : 'none',
+              transition: 'max-width 0.2s ease, min-width 0.2s ease' }}
             onDragOver={e => handleDragOver(e, type)}
             onDragLeave={() => setDragOverCol(null)}
             onDrop={e => handleDrop(e, type)}>
-            <div className="px-3 py-2.5 flex items-center justify-between"
-              style={{ backgroundColor: isOver ? meta.color + '33' : meta.bg, borderBottom: `2px solid ${meta.color}` }}>
-              <p className="text-xs font-bold" style={{ color: meta.color }}>{type}</p>
-              <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ backgroundColor: meta.color + '33', color: meta.color }}>{cards.length}</span>
+            <div style={{ height: 20, backgroundColor: meta.color, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 4 }}>
+              <button onClick={() => toggleCollapse(type)} title={isCollapsed ? 'Expand' : 'Collapse'}
+                style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1, padding: '1px 3px', borderRadius: 3, background: 'transparent' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.15)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={isCollapsed ? 'M9 5l7 7-7 7' : 'M15 19l-7-7 7-7'} />
+                </svg>
+              </button>
             </div>
-            <div className="flex-1 p-2 space-y-2 overflow-y-auto transition-colors"
-              style={{ minHeight: '150px', backgroundColor: isOver ? meta.color + '11' : '#FAF7F4' }}>
-              {cards.map(donor => {
-                const isActive = donor.isActive !== undefined ? donor.isActive : Boolean(donor.is_active);
-                return (
-                  <div key={donor.id}
-                    draggable
-                    onDragStart={e => handleDragStart(e, donor.id)}
-                    onDragEnd={() => { draggedId.current = null; setDragOverCol(null); }}
-                    className="bg-white rounded-lg border p-3 space-y-1.5 group cursor-grab active:cursor-grabbing hover:shadow-sm transition-shadow select-none"
-                    style={{ borderColor: '#E8E0D8' }}>
-                    <div className="flex items-start justify-between gap-1">
-                      <button onClick={() => onView(donor)}
-                        className="text-xs font-semibold text-ez-dark leading-snug flex-1 text-left hover:underline truncate"
-                        style={{ color: '#E8967A' }}>
-                        {donor.name}
-                      </button>
-                      {canEdit && (
-                        <button onClick={() => onEdit(donor)}
-                          className="opacity-0 group-hover:opacity-100 p-0.5 rounded transition-all flex-shrink-0"
-                          style={{ color: '#E8967A' }}>
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                    <p className="text-xs text-ez-muted truncate">{donor.email || '—'}</p>
-                    <div className="flex items-center gap-1.5">
-                      <span className="inline-flex px-1.5 py-0.5 rounded text-xs font-medium"
-                        style={{ backgroundColor: isActive !== false ? '#E8F7F6' : '#F5F5F5', color: isActive !== false ? '#8ECFCA' : '#a0a0a0' }}>
-                        {isActive !== false ? 'Active' : 'Inactive'}
-                      </span>
-                    </div>
+            {isCollapsed ? (
+              <div className="flex flex-col items-center gap-2 py-3 cursor-pointer select-none"
+                style={{ backgroundColor: meta.bg, flex: 1 }} onClick={() => toggleCollapse(type)}>
+                <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
+                  style={{ backgroundColor: meta.textColor, color: '#fff' }}>{cards.length}</span>
+                <span className="text-xs font-bold"
+                  style={{ color: meta.textColor, writingMode: 'vertical-rl', textOrientation: 'mixed', transform: 'rotate(180deg)', letterSpacing: '0.05em' }}>{type}</span>
+              </div>
+            ) : (
+              <>
+                <div className="px-3 pt-2 pb-2"
+                  style={{ backgroundColor: isOver ? meta.color + '18' : meta.bg, borderBottom: `1px solid ${meta.color}55` }}>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold tracking-wide flex-1" style={{ color: meta.textColor }}>{type}</span>
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ backgroundColor: meta.textColor, color: '#fff' }}>{cards.length}</span>
                   </div>
-                );
-              })}
-              {cards.length === 0 && (
-                <div className="flex items-center justify-center h-20 border-2 border-dashed rounded-lg text-xs text-ez-muted"
-                  style={{ borderColor: isOver ? meta.color : '#E8E0D8' }}>
-                  {isOver ? 'Drop here' : 'No donors'}
                 </div>
-              )}
-            </div>
+                <div className="flex-1 p-2 space-y-2 overflow-y-auto transition-colors"
+                  style={{ minHeight: '150px', backgroundColor: isOver ? meta.color + '11' : '#FAF7F4' }}>
+                  {cards.map(donor => {
+                    const isActive = donor.isActive !== undefined ? donor.isActive : Boolean(donor.is_active);
+                    return (
+                      <div key={donor.id} draggable
+                        onDragStart={e => handleDragStart(e, donor.id)}
+                        onDragEnd={() => { draggedId.current = null; setDragOverCol(null); }}
+                        className="bg-white rounded-lg border p-3 space-y-1.5 group cursor-grab active:cursor-grabbing hover:shadow-sm transition-shadow select-none"
+                        style={{ borderColor: '#E8E0D8' }}>
+                        <div className="flex items-start justify-between gap-1">
+                          <button onClick={() => onView(donor)} className="text-xs font-semibold leading-snug flex-1 text-left hover:underline truncate" style={{ color: '#E8967A' }}>{donor.name}</button>
+                          {canEdit && (
+                            <button onClick={() => onEdit(donor)} className="opacity-0 group-hover:opacity-100 p-0.5 rounded transition-all flex-shrink-0" style={{ color: '#E8967A' }}>
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-xs text-ez-muted truncate">{donor.email || '—'}</p>
+                        <span className="inline-flex px-1.5 py-0.5 rounded text-xs font-medium"
+                          style={{ backgroundColor: isActive !== false ? '#E8F7F6' : '#F5F5F5', color: isActive !== false ? '#8ECFCA' : '#a0a0a0' }}>
+                          {isActive !== false ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {cards.length === 0 && (
+                    <div className="flex items-center justify-center h-20 border-2 border-dashed rounded-lg text-xs text-ez-muted" style={{ borderColor: isOver ? meta.color : '#E8E0D8' }}>
+                      {isOver ? 'Drop here' : 'No donors'}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         );
       })}
+    </div>
     </div>
   );
 }
@@ -198,6 +207,7 @@ export function Donors() {
   const { donors, addDonor, updateDonor, deleteDonor, loading } = useDonors();
   const { hasPermission } = useAuth();
   const canCreate = hasPermission('donors', 'can_create');
+  const [addHovered, setAddHovered] = useState(false);
   const canEdit   = hasPermission('donors', 'can_edit');
   const canDelete = hasPermission('donors', 'can_delete');
   const toast = useToast();
@@ -208,6 +218,7 @@ export function Donors() {
   const [typeFilter, setTypeFilter]   = useState('');
   const [statusFilter, setStatusFilter] = useState('active');
   const [page, setPage]               = useState(1);
+  const [pageSize, setPageSize]       = useState(10);
   const [showForm, setShowForm]       = useState(false);
   const [editDonor, setEditDonor]     = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -238,11 +249,11 @@ export function Donors() {
     });
   }, [displayDonors, search, typeFilter, statusFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginated  = filtered.slice((page - 1) * pageSize, page * pageSize);
 
-  const openAdd  = (prefill = {}) => { setEditDonor(prefill); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-  const openEdit = (d) => { setEditDonor(d); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const openAdd  = (prefill = {}) => { setEditDonor(prefill); setShowForm(true); };
+  const openEdit = (d) => { setEditDonor(d); setShowForm(true); };
   const closeForm = () => { setShowForm(false); setEditDonor(null); };
 
   const handleSubmit = async (data) => {
@@ -285,34 +296,11 @@ export function Donors() {
   return (
     <div style={{ background: '#E8E2DB', minHeight: '100vh', padding: '20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-      {/* ── Page Header ─────────────────────────────────────────── */}
-      <div style={{ background: 'linear-gradient(135deg, #E8967A 0%, #d4806a 100%)', borderRadius: 14, padding: '18px 24px', boxShadow: '0 4px 16px rgba(232,150,122,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 700, margin: 0, fontFamily: 'serif' }}>Donors</h1>
-          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, margin: '3px 0 0' }}>{activeDonorCount} active donors</p>
-        </div>
-        {!showForm && canCreate && (
-          <button onClick={() => openAdd()}
-            style={{ background: '#fff', color: '#E8967A', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
-            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-            Add Donor
-          </button>
-        )}
-      </div>
 
       {/* ── Add / Edit Form ─────────────────────────────────────── */}
-      {showForm && (
-        <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', border: '2px solid #E8967A', overflow: 'hidden' }}>
-          <div style={{ background: 'linear-gradient(90deg, #FDF0EB, #fff)', borderBottom: '1px solid #F0E8E4', padding: '12px 20px' }}>
-            <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: '#E8967A', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              {editDonor?.id ? '✎ Edit Donor' : '＋ New Donor'}
-            </p>
-          </div>
-          <div style={{ padding: '0' }}>
-            <DonorFormPanel initialData={editDonor || {}} onSubmit={handleSubmit} onCancel={closeForm} loading={saving} />
-          </div>
-        </div>
-      )}
+      <Modal isOpen={showForm} onClose={closeForm} title={editDonor?.id ? 'Edit Donor' : 'Add New Donor'} size="lg">
+        <DonorFormPanel initialData={editDonor || {}} onSubmit={handleSubmit} onCancel={closeForm} loading={saving} />
+      </Modal>
 
       {/* ── Filters ─────────────────────────────────────────────── */}
       <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
@@ -339,44 +327,52 @@ export function Donors() {
           <span style={{ fontSize: 12, color: '#999', background: '#F0EDE9', borderRadius: 20, padding: '4px 10px', fontWeight: 600 }}>
             {filtered.length} result{filtered.length !== 1 ? 's' : ''}
           </span>
-          <div style={{ marginLeft: 'auto' }}><ViewSwitcher view={view} onChange={setView} /></div>
         </div>}
       </div>
 
       {/* ── Content ─────────────────────────────────────────────── */}
-      {loading && !donors.length ? (
-        <div style={{ textAlign: 'center', padding: '48px 0', background: '#fff', borderRadius: 14, color: '#999', fontSize: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
-          Loading donors…
+      <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.09)' }}>
+        <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <svg width="13" height="13" fill="none" stroke="#aaa" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" /></svg>
+            <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Donor List</span>
+            <span style={{ color: '#666', fontSize: 11, background: '#3D3D3D', borderRadius: 12, padding: '2px 10px' }}>{filtered.length} total</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {canCreate && (
+              <button onClick={() => openAdd()} onMouseEnter={() => setAddHovered(true)} onMouseLeave={() => setAddHovered(false)}
+                title="Add Donor"
+                style={{ background: '#E8967A', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, transition: 'all 0.15s' }}>
+                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                {addHovered && <span style={{ whiteSpace: 'nowrap' }}>Add</span>}
+              </button>
+            )}
+            <ViewSwitcher view={view} onChange={setView} />
+          </div>
         </div>
-      ) : filtered.length === 0 && view === 'list' ? (
-        <div style={{ textAlign: 'center', padding: '64px 0', background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>👤</div>
-          <p style={{ fontWeight: 600, color: '#1A1A1A', margin: '0 0 6px' }}>No donors found</p>
-          <p style={{ color: '#999', fontSize: 13, margin: '0 0 20px' }}>{donors.length === 0 ? 'Add your first donor to get started' : 'Try adjusting filters'}</p>
-          {donors.length === 0 && !showForm && canCreate && <Button variant="primary" onClick={() => openAdd()}>Add First Donor</Button>}
-        </div>
-      ) : view === 'kanban' ? (
-        <DonorKanban donors={filtered} onEdit={openEdit} onView={d => navigate(`/donors/${d.id}`)} onMove={canEdit ? handleMove : () => {}} canEdit={canEdit} />
-      ) : view === 'calendar' ? (
-        <CalendarGrid
-          items={filtered}
-          getDate={d => d.createdAt ? String(d.createdAt).slice(0, 10) : null}
-          renderDot={d => { const meta = TYPE_META[d.donorType || d.donor_type] || DEFAULT_TYPE_META; return { label: d.name, color: meta.color, bg: meta.bg }; }}
-          onItemClick={d => navigate(`/donors/${d.id}`)}
-          onDayClick={handleDayClick}
-        />
-      ) : (
-        <>
-          <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.09)' }}>
-            {/* Table section label */}
-            <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <svg width="13" height="13" fill="none" stroke="#aaa" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" /></svg>
-                <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Donor List</span>
-              </div>
-              <span style={{ color: '#666', fontSize: 11, background: '#3D3D3D', borderRadius: 12, padding: '2px 10px' }}>{filtered.length} total</span>
-            </div>
-            <div style={{ overflowX: 'auto' }}>
+        {loading && !donors.length ? (
+          <div style={{ textAlign: 'center', padding: '48px 0', color: '#999', fontSize: 14 }}>
+            Loading donors…
+          </div>
+        ) : filtered.length === 0 && view === 'list' ? (
+          <div style={{ textAlign: 'center', padding: '64px 0' }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>👤</div>
+            <p style={{ fontWeight: 600, color: '#1A1A1A', margin: '0 0 6px' }}>No donors found</p>
+            <p style={{ color: '#999', fontSize: 13, margin: '0 0 20px' }}>{donors.length === 0 ? 'Add your first donor to get started' : 'Try adjusting filters'}</p>
+            {donors.length === 0 && !showForm && canCreate && <Button variant="primary" onClick={() => openAdd()}>Add First Donor</Button>}
+          </div>
+        ) : view === 'kanban' ? (
+          <DonorKanban donors={filtered} onEdit={openEdit} onView={d => navigate(`/donors/${d.id}`)} onMove={canEdit ? handleMove : () => {}} canEdit={canEdit} />
+        ) : view === 'calendar' ? (
+          <CalendarGrid
+            items={filtered}
+            getDate={d => d.createdAt ? String(d.createdAt).slice(0, 10) : null}
+            renderDot={d => { const meta = TYPE_META[d.donorType || d.donor_type] || DEFAULT_TYPE_META; return { label: d.name, color: meta.color, bg: meta.bg }; }}
+            onItemClick={d => navigate(`/donors/${d.id}`)}
+            onDayClick={handleDayClick}
+          />
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: '#F7F4F1', borderBottom: '2px solid #E8E0D8' }}>
@@ -437,19 +433,24 @@ export function Donors() {
                 </tbody>
               </table>
             </div>
-          </div>
-
-          {totalPages > 1 && (
-            <div style={{ background: '#fff', borderRadius: 14, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 2px 8px rgba(0,0,0,0.07)', border: '1px solid #E8E0D8' }}>
-              <p style={{ fontSize: 12, color: '#999', margin: 0 }}>Page <strong style={{ color: '#555' }}>{page}</strong> of {totalPages}</p>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
-                <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</Button>
-              </div>
-            </div>
           )}
-        </>
-      )}
+        </div>
+
+        {view === 'list' && (
+          <div style={{ background: '#FEF9C3', borderRadius: 14, padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid #FDE047' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 12, color: '#713F12' }}>Page <strong>{page}</strong> of {totalPages} · {filtered.length} records</span>
+              <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
+                style={{ fontSize: 11, border: '1px solid #FDE047', borderRadius: 6, padding: '3px 6px', background: '#fff', color: '#713F12', fontWeight: 600, cursor: 'pointer' }}>
+                {PAGE_SIZE_OPTIONS.map(n => <option key={n} value={n}>{n} per page</option>)}
+              </select>
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
+              <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</Button>
+            </div>
+          </div>
+        )}
 
       <ConfirmDialog isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDeleteConfirm}
         title="Deactivate Donor" message={`Deactivate "${deleteTarget?.name}"? Their donation history will be preserved.`}

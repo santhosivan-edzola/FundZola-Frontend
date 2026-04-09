@@ -10,10 +10,14 @@ function normalizeDeal(d) {
     donorName: d.donor_name ?? d.donorName,
     donorEmail: d.donor_email ?? d.donorEmail,
     donorPhone: d.donor_phone ?? d.donorPhone,
+    programId: d.program_id ?? d.programId ?? null,
+    programTitle: d.program_title ?? d.programTitle ?? null,
+    dealType: d.deal_type ?? d.dealType ?? 'Full',
     expectedDate: d.expected_date ?? d.expectedDate,
     actualDate: d.actual_date ?? d.actualDate,
     createdAt: d.created_at ?? d.createdAt,
     updatedAt: d.updated_at ?? d.updatedAt,
+    allocations: d.allocations ?? [],
   };
 }
 
@@ -43,6 +47,8 @@ export function DealProvider({ children }) {
 
   const toApiPayload = (data) => ({
     donor_id:      data.donor_id      ?? data.donorId,
+    program_id:    data.program_id    ?? data.programId    ?? null,
+    deal_type:     data.deal_type     ?? data.dealType     ?? 'Full',
     title:         data.title,
     amount:        data.amount        ?? 0,
     stage:         data.stage         ?? 'Prospect',
@@ -50,6 +56,7 @@ export function DealProvider({ children }) {
     notes:         data.notes         ?? null,
     expected_date: data.expected_date ?? data.expectedDate ?? null,
     actual_date:   data.actual_date   ?? data.actualDate   ?? null,
+    allocations:   data.allocations   ?? [],
   });
 
   const addDeal = useCallback(async (data) => {
@@ -83,8 +90,31 @@ export function DealProvider({ children }) {
     await fetchDeals();
   }, [fetchDeals]);
 
+  // Full deal: auto-create donation + mark Received
+  const receiveDeal = useCallback(async (id, data = {}) => {
+    const res = await api.post(`/deals/${id}/receive`, data);
+    if (!res.success) throw new Error(res.message || 'Failed to receive deal.');
+    await fetchDeals();
+    return res.data;
+  }, [fetchDeals]);
+
+  // Partial deal: add a tranche donation
+  const addDealDonation = useCallback(async (dealId, data) => {
+    const res = await api.post(`/deals/${dealId}/donations`, data);
+    if (!res.success) throw new Error(res.message || 'Failed to add donation.');
+    await fetchDeals();
+    return res.data;
+  }, [fetchDeals]);
+
+  // Get all donations linked to a deal
+  const getDealDonations = useCallback(async (dealId) => {
+    const res = await api.get(`/deals/${dealId}/donations`);
+    if (!res.success) throw new Error(res.message || 'Failed to load donations.');
+    return res.data;
+  }, []);
+
   return (
-    <DealContext.Provider value={{ deals, loading, error, addDeal, updateDeal, updateDealStage, deleteDeal, fetchDeals }}>
+    <DealContext.Provider value={{ deals, loading, error, addDeal, updateDeal, updateDealStage, deleteDeal, fetchDeals, receiveDeal, addDealDonation, getDealDonations }}>
       {children}
     </DealContext.Provider>
   );

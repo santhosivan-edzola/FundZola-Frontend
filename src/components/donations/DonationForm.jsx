@@ -7,7 +7,7 @@ import { validateAmount, validateRequired } from '../../utils/validators';
 import { useDonors } from '../../hooks/useDonors';
 
 const emptyForm = {
-  donorId: '',
+  donorId: '',  
   amount: '',
   date: new Date().toISOString().split('T')[0],
   paymentMode: '',
@@ -47,6 +47,7 @@ export function DonationForm({ initialData = {}, onSubmit, onCancel }) {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const val = type === 'checkbox' ? checked : value;
+    console.log("value", val);
     setForm((prev) => ({ ...prev, [name]: val }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
