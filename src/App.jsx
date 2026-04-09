@@ -14,6 +14,7 @@ import { ProgramDetail } from './pages/ProgramDetail';
 import { Donations } from './pages/Donations';
 import { Expenses } from './pages/Expenses';
 import { Settings } from './pages/Settings';
+import { Copilot } from './pages/Copilot';
 import { Users } from './pages/Users';
 import { NotFound } from './pages/NotFound';
 
@@ -41,6 +42,7 @@ function AppRoutes() {
         <Route path="/donations" element={<Donations />} />
         <Route path="/expenses" element={<Expenses />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/copilot" element={<Copilot />} />
         <Route path="/users" element={<RequireAdmin><Users /></RequireAdmin>} />
       </Route>
       <Route path="*" element={<NotFound />} />
