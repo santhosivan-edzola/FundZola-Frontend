@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { api } from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import { usePrograms } from '../hooks/usePrograms';
 import { useAuth } from '../context/AuthContext';
@@ -17,7 +18,7 @@ function fmt(n) {
   return Number(n || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
 }
 
-function ProgramForm({ initial, onSave, onClose }) {
+function ProgramForm({ initial, categories, onSave, onClose }) {
   const [form, setForm] = useState({
     title: initial?.title ?? '',
     description: initial?.description ?? '',
@@ -26,19 +27,53 @@ function ProgramForm({ initial, onSave, onClose }) {
     end_date: initial?.endDate ?? initial?.end_date ?? '',
     status: initial?.status ?? 'Active',
   });
+
+  const [allocations, setAllocations] = useState([{ category_id: '', amount: '', notes: '' }]);
+  const [loadingAllocs, setLoadingAllocs] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // When editing, fetch full program data to get existing allocations
+  useEffect(() => {
+    if (!initial?.id) return;
+    setLoadingAllocs(true);
+    api.get(`/programs/${initial.id}`)
+      .then(res => {
+        if (res.success && res.data.allocations?.length) {
+          setAllocations(res.data.allocations.map(a => ({
+            category_id: String(a.category_id),
+            amount: String(a.allocated_amount ?? ''),
+            notes: a.notes ?? '',
+          })));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingAllocs(false));
+  }, [initial?.id]);
   const [err, setErr] = useState('');
 
   function set(k, v) { setForm(p => ({ ...p, [k]: v })); }
+
+  const budget = Number(form.estimated_budget) || 0;
+  const totalAllocated = allocations.reduce((s, a) => s + (Number(a.amount) || 0), 0);
+  const remaining = budget - totalAllocated;
+  const overBudget = remaining < 0;
+
+  function addRow() { setAllocations(p => [...p, { category_id: '', amount: '', notes: '' }]); }
+  function removeRow(i) { setAllocations(p => p.filter((_, idx) => idx !== i)); }
+  function setRow(i, k, v) { setAllocations(p => p.map((r, idx) => idx === i ? { ...r, [k]: v } : r)); }
 
   async function handleSubmit(e) {
     e.preventDefault();
     setErr('');
     if (!form.title.trim()) { setErr('Title is required.'); return; }
-    if (!form.estimated_budget || Number(form.estimated_budget) <= 0) { setErr('Estimated budget must be greater than 0.'); return; }
+    if (!form.estimated_budget || budget <= 0) { setErr('Estimated budget must be greater than 0.'); return; }
+    if (overBudget) { setErr(`Total allocation (₹${totalAllocated.toLocaleString('en-IN')}) exceeds budget.`); return; }
+    const validAllocs = allocations
+      .filter(a => a.category_id && Number(a.amount) > 0)
+      .map(a => ({ category_id: a.category_id, allocated_amount: Number(a.amount), notes: a.notes || null }));
     setSaving(true);
     try {
-      await onSave(form);
+      await onSave(form, validAllocs);
       onClose();
     } catch (ex) {
       setErr(ex.message);
@@ -52,12 +87,12 @@ function ProgramForm({ initial, onSave, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }}>
-      <div className="rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden" style={{ background: '#1E1E1E', border: '1px solid #333' }}>
-        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #2a2a2a' }}>
+      <div className="rounded-xl shadow-2xl w-full max-w-xl mx-4 flex flex-col" style={{ background: '#1E1E1E', border: '1px solid #333', maxHeight: '90vh' }}>
+        <div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderBottom: '1px solid #2a2a2a' }}>
           <h2 className="font-semibold text-sm" style={{ color: '#eee' }}>{initial ? 'Edit Program' : 'New Program'}</h2>
           <button onClick={onClose} style={{ color: '#666', fontSize: 20, lineHeight: 1, background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
         </div>
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
           {err && <p className="text-xs rounded-lg px-3 py-2" style={{ background: '#3B1212', color: '#FCA5A5' }}>{err}</p>}
 
           <div>
@@ -69,7 +104,7 @@ function ProgramForm({ initial, onSave, onClose }) {
 
           <div>
             <label className={labelCls} style={{ color: '#aaa' }}>Description</label>
-            <textarea className={inputCls} rows={3} value={form.description} onChange={e => set('description', e.target.value)}
+            <textarea className={inputCls} rows={2} value={form.description} onChange={e => set('description', e.target.value)}
               placeholder="Brief description of the program…"
               style={{ background: '#141414', borderColor: '#333', color: '#eee', resize: 'vertical' }} />
           </div>
@@ -105,7 +140,72 @@ function ProgramForm({ initial, onSave, onClose }) {
             </select>
           </div>
 
-          <div className="flex gap-3 pt-1">
+          {/* ── Budget Allocation Subform ── */}
+          <div style={{ borderTop: '1px solid #2a2a2a', paddingTop: 16 }}>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-xs font-semibold" style={{ color: '#eee' }}>Budget Allocation</p>
+                <p className="text-xs mt-0.5" style={{ color: '#666' }}>
+                  {loadingAllocs ? 'Loading existing allocations…' : 'Split the budget across categories (optional)'}
+                </p>
+              </div>
+              {budget > 0 && (
+                <div className="text-right">
+                  <p className="text-xs" style={{ color: overBudget ? '#FCA5A5' : '#8ECFCA' }}>
+                    {overBudget ? '⚠ Over by' : 'Remaining'}: ₹{Math.abs(remaining).toLocaleString('en-IN')}
+                  </p>
+                  {totalAllocated > 0 && (
+                    <p className="text-xs" style={{ color: '#666' }}>Allocated: ₹{totalAllocated.toLocaleString('en-IN')}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Progress bar */}
+            {budget > 0 && totalAllocated > 0 && (
+              <div className="h-1.5 rounded-full overflow-hidden mb-3" style={{ background: '#2a2a2a' }}>
+                <div className="h-full rounded-full transition-all"
+                  style={{ width: `${Math.min(100, (totalAllocated / budget) * 100)}%`, background: overBudget ? '#E87A7A' : '#E8967A' }} />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              {allocations.map((row, i) => (
+                <div key={i} className="flex gap-2 items-center">
+                  <select value={row.category_id} onChange={e => setRow(i, 'category_id', e.target.value)}
+                    className="flex-1 rounded-lg border px-2 py-1.5 text-xs focus:outline-none"
+                    style={{ background: '#141414', borderColor: '#333', color: row.category_id ? '#eee' : '#555' }}>
+                    <option value="">— Category —</option>
+                    {categories.filter(c => c.is_active !== false).map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                  <input type="number" min="0" step="0.01" value={row.amount}
+                    onChange={e => setRow(i, 'amount', e.target.value)}
+                    placeholder="₹ Amount"
+                    className="w-28 rounded-lg border px-2 py-1.5 text-xs focus:outline-none"
+                    style={{ background: '#141414', borderColor: '#333', color: '#eee' }} />
+                  <input value={row.notes} onChange={e => setRow(i, 'notes', e.target.value)}
+                    placeholder="Notes (opt.)"
+                    className="w-28 rounded-lg border px-2 py-1.5 text-xs focus:outline-none"
+                    style={{ background: '#141414', borderColor: '#333', color: '#eee' }} />
+                  <button type="button" onClick={() => removeRow(i)}
+                    style={{ color: '#666', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, lineHeight: 1, flexShrink: 0 }}>×</button>
+                </div>
+              ))}
+            </div>
+
+            <button type="button" onClick={addRow}
+              className="mt-2 text-xs flex items-center gap-1"
+              style={{ color: '#E8967A', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+              </svg>
+              Add line
+            </button>
+          </div>
+
+          <div className="flex gap-3 pt-1 flex-shrink-0">
             <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg text-xs font-medium"
               style={{ background: '#2a2a2a', color: '#aaa', border: '1px solid #333' }}>Cancel</button>
             <button type="submit" disabled={saving} className="flex-1 py-2 rounded-lg text-xs font-semibold"
@@ -197,9 +297,9 @@ function ProgramCard({ program, onEdit, onDelete }) {
 }
 
 export function Programs() {
-  const { programs, loading, error, addProgram, updateProgram, deleteProgram } = usePrograms();
+  const { programs, categories, loading, error, addProgram, updateProgram, deleteProgram, saveAllocations, fetchCategories } = usePrograms();
   const { hasPermission } = useAuth();
-  const { showToast } = useToast();
+  const toast = useToast();
 
   const [activeTab, setActiveTab] = useState('All');
   const [search, setSearch] = useState('');
@@ -218,16 +318,19 @@ export function Programs() {
     });
   }, [programs, activeTab, search]);
 
-  function handleEdit(program) { setEditing(program); setShowForm(true); }
+  function handleEdit(program) { setEditing(program); setShowForm(true); fetchCategories(true); }
   function handleCloseForm() { setShowForm(false); setEditing(null); }
+  function handleOpenAdd() { setEditing(null); setShowForm(true); fetchCategories(true); }
 
-  async function handleSave(data) {
+  async function handleSave(data, allocations) {
     if (editing) {
       await updateProgram(editing.id, data);
-      showToast('Program updated successfully.', 'success');
+      if (allocations.length) await saveAllocations(editing.id, allocations);
+      toast.success('Program updated successfully.');
     } else {
-      await addProgram(data);
-      showToast('Program created successfully.', 'success');
+      const newProgram = await addProgram(data);
+      if (allocations.length && newProgram?.id) await saveAllocations(newProgram.id, allocations);
+      toast.success('Program created successfully.');
     }
   }
 
@@ -236,32 +339,20 @@ export function Programs() {
     setDeleting(true);
     try {
       await deleteProgram(confirmDelete.id);
-      showToast('Program deleted.', 'success');
+      toast.success('Program deleted.');
       setConfirmDelete(null);
     } catch (ex) {
-      showToast(ex.message, 'error');
+      toast.error(ex.message);
     } finally {
       setDeleting(false);
     }
   }
 
   const canCreate = hasPermission('programs', 'can_create');
+  const [addHovered, setAddHovered] = useState(false);
 
   return (
     <div style={{ background: '#E8E2DB', minHeight: '100vh', padding: '20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Page header */}
-      <div style={{ background: 'linear-gradient(135deg, #E8967A 0%, #d4806a 100%)', borderRadius: 14, padding: '18px 24px', boxShadow: '0 4px 16px rgba(232,150,122,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 700, margin: 0, fontFamily: 'serif' }}>Programs</h1>
-          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, margin: '3px 0 0' }}>Fundraising programs with budget planning and deal tracking</p>
-        </div>
-        {canCreate && (
-          <button onClick={() => { setEditing(null); setShowForm(true); }} style={{ background: '#fff', color: '#E8967A', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
-            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-            Add Program
-          </button>
-        )}
-      </div>
 
       {/* Search + status tabs */}
       <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
@@ -330,7 +421,7 @@ export function Programs() {
             {search || activeTab !== 'All' ? 'No programs match your filters.' : 'No programs yet.'}
           </p>
           {canCreate && !search && activeTab === 'All' && (
-            <button onClick={() => setShowForm(true)}
+            <button onClick={handleOpenAdd}
               className="mt-4 px-5 py-2 rounded-lg text-xs font-semibold"
               style={{ background: '#E8967A', color: '#1A1A1A' }}>
               Create First Program
@@ -341,8 +432,18 @@ export function Programs() {
       {!loading && !error && filtered.length > 0 && (
         <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
           <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Programs</span>
-            <span style={{ color: '#666', fontSize: 11, background: '#3D3D3D', borderRadius: 12, padding: '2px 10px' }}>{filtered.length} total</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Programs</span>
+              <span style={{ color: '#666', fontSize: 11, background: '#3D3D3D', borderRadius: 12, padding: '2px 10px' }}>{filtered.length} total</span>
+            </div>
+            {canCreate && (
+              <button onClick={handleOpenAdd} onMouseEnter={() => setAddHovered(true)} onMouseLeave={() => setAddHovered(false)}
+                title="Add Program"
+                style={{ background: '#E8967A', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, transition: 'all 0.15s' }}>
+                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                {addHovered && <span style={{ whiteSpace: 'nowrap' }}>Add</span>}
+              </button>
+            )}
           </div>
           <div style={{ padding: '16px 20px' }}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -358,7 +459,7 @@ export function Programs() {
 
       {/* Create / Edit Modal */}
       {showForm && (
-        <ProgramForm initial={editing} onSave={handleSave} onClose={handleCloseForm} />
+        <ProgramForm initial={editing} categories={categories} onSave={handleSave} onClose={handleCloseForm} />
       )}
 
       {/* Delete confirm */}

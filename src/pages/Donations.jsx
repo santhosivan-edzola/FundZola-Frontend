@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useDonations } from '../hooks/useDonations';
 import { useDonors } from '../hooks/useDonors';
@@ -20,7 +20,7 @@ import { generateReceipt } from '../utils/pdfGenerator';
 import { FUND_CATEGORIES, PAYMENT_MODES } from '../constants';
 import { formatCurrency, formatDate } from '../utils/formatters';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 200];
 
 const FUND_META = {
   Education:           { color: '#7ab8e8', bg: '#EBF4FD' },
@@ -39,9 +39,23 @@ const DEFAULT_FUND_META = { color: '#8ECFCA', bg: '#E8F7F6' };
 // ── Donation Detail Panel ──────────────────────────────────────────────────────
 function DonationDetailPanel({ donation, donor, expenses, onClose, onReceipt }) {
   const donationAmount = parseFloat(donation.amount) || 0;
-  const taggedExpenses = expenses.filter(e =>
-    (e.donationId && e.donationId === donation.id) || (e.donation_id && e.donation_id === donation.id)
-  );
+  // Include both Full (direct donation_id) and Split (via allocations) expenses
+  const taggedExpenses = expenses
+    .filter(e => {
+      if ((e.donationId && e.donationId === donation.id) || (e.donation_id && e.donation_id === donation.id)) return true;
+      if (e.expense_type === 'Split' || e.expenseType === 'Split') {
+        return (e.allocations || []).some(a => a.donation_id === donation.id || a.donation_id === String(donation.id));
+      }
+      return false;
+    })
+    .map(e => {
+      // For Split, show only the allocation amount for this donation
+      if (e.expense_type === 'Split' || e.expenseType === 'Split') {
+        const alloc = (e.allocations || []).find(a => a.donation_id === donation.id || a.donation_id === String(donation.id));
+        return { ...e, amount: alloc ? alloc.amount : 0 };
+      }
+      return e;
+    });
   const totalExpenses = taggedExpenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
   const utilized = donationAmount > 0 ? Math.min((totalExpenses / donationAmount) * 100, 100) : 0;
   const barColor = utilized > 90 ? '#E87A7A' : utilized > 70 ? '#e8c07a' : '#8ECFCA';
@@ -85,6 +99,26 @@ function DonationDetailPanel({ donation, donor, expenses, onClose, onReceipt }) 
             <span>Balance: <span className="font-semibold" style={{ color: '#8ECFCA' }}>{formatCurrency(donationAmount - totalExpenses)}</span></span>
           </div>
         </div>
+        {/* Category breakdown from deal allocations */}
+        {(donation.allocations || []).length > 0 && (
+          <div>
+            <h3 className="text-sm font-semibold text-ez-dark mb-3">Category Breakdown</h3>
+            <div className="space-y-1.5">
+              {donation.allocations.map((a, i) => (
+                <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg text-xs"
+                  style={{ background: '#FAF7F4', border: '1px solid #E8E0D8' }}>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: a.category_color || '#E8967A' }} />
+                    <span className="font-medium text-ez-dark">{a.category_name}</span>
+                  </div>
+                  <span className="font-semibold text-ez-dark">{formatCurrency(a.amount)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div>
           <h3 className="text-sm font-semibold text-ez-dark mb-3">
             Tagged Expenses
@@ -132,6 +166,8 @@ function DonationDetailPanel({ donation, donor, expenses, onClose, onReceipt }) 
 function DonationKanban({ donations, donorMap, allFunds, onView, onEdit, onMove, canEdit }) {
   const draggedId = useRef(null);
   const [dragOverCol, setDragOverCol] = useState(null);
+  const [collapsed, setCollapsed] = useState({});
+  const toggleCollapse = (fund) => setCollapsed(p => ({ ...p, [fund]: !p[fund] }));
 
   const handleDragStart = (e, id) => { draggedId.current = id; e.dataTransfer.effectAllowed = 'move'; };
   const handleDragOver  = (e, fund) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverCol(fund); };
@@ -141,65 +177,92 @@ function DonationKanban({ donations, donorMap, allFunds, onView, onEdit, onMove,
   };
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: '50vh' }}>
+    <div style={{ padding: '12px 16px' }}>
+    <div className="flex gap-3 pb-2" style={{ minHeight: '50vh', alignItems: 'stretch', width: '100%' }}>
       {allFunds.map(fund => {
         const cards = donations.filter(d => (d.fundCategory || d.fund_category || 'General') === fund);
         const total = cards.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0);
         const meta = FUND_META[fund] || DEFAULT_FUND_META;
         const isOver = dragOverCol === fund;
+        const isCollapsed = !!collapsed[fund];
         return (
           <div key={fund}
-            className="flex-shrink-0 w-56 flex flex-col rounded-xl overflow-hidden border transition-all"
-            style={{ borderColor: isOver ? meta.color : '#E8E0D8', boxShadow: isOver ? `0 0 0 2px ${meta.color}44` : 'none' }}
+            className="flex flex-col rounded-xl overflow-hidden border transition-all"
+            style={{ flex: '1 1 0', minWidth: isCollapsed ? 44 : 120, maxWidth: isCollapsed ? 80 : 'none',
+              borderColor: isOver ? meta.color : '#E8E0D8', boxShadow: isOver ? `0 0 0 2px ${meta.color}44` : 'none',
+              transition: 'max-width 0.2s ease, min-width 0.2s ease' }}
             onDragOver={e => handleDragOver(e, fund)}
             onDragLeave={() => setDragOverCol(null)}
             onDrop={e => handleDrop(e, fund)}>
-            <div className="px-3 py-2.5 flex items-center justify-between"
-              style={{ backgroundColor: isOver ? meta.color + '33' : meta.bg, borderBottom: `2px solid ${meta.color}` }}>
-              <div>
-                <p className="text-xs font-bold" style={{ color: meta.color }}>{fund}</p>
-                <p className="text-xs text-ez-muted">{formatCurrency(total)}</p>
+            <div style={{ height: 20, backgroundColor: meta.color, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 4 }}>
+              <button onClick={() => toggleCollapse(fund)} title={isCollapsed ? 'Expand' : 'Collapse'}
+                style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1, padding: '1px 3px', borderRadius: 3, background: 'transparent' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.15)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={isCollapsed ? 'M9 5l7 7-7 7' : 'M15 19l-7-7 7-7'} />
+                </svg>
+              </button>
+            </div>
+            {isCollapsed ? (
+              <div className="flex flex-col items-center gap-2 py-3 cursor-pointer select-none"
+                style={{ backgroundColor: meta.bg, flex: 1 }} onClick={() => toggleCollapse(fund)}>
+                <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
+                  style={{ backgroundColor: meta.color, color: '#fff' }}>{cards.length}</span>
+                <span className="text-xs font-bold"
+                  style={{ color: meta.color, writingMode: 'vertical-rl', textOrientation: 'mixed', transform: 'rotate(180deg)', letterSpacing: '0.05em' }}>{fund}</span>
               </div>
-              <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ backgroundColor: meta.color + '33', color: meta.color }}>{cards.length}</span>
-            </div>
-            <div className="flex-1 p-2 space-y-2 overflow-y-auto transition-colors"
-              style={{ minHeight: '150px', backgroundColor: isOver ? meta.color + '11' : '#FAF7F4' }}>
-              {cards.map(don => {
-                const donor = donorMap[don.donorId || don.donor_id];
-                return (
-                  <div key={don.id}
-                    draggable
-                    onDragStart={e => handleDragStart(e, don.id)}
-                    onDragEnd={() => { draggedId.current = null; setDragOverCol(null); }}
-                    className="bg-white rounded-lg border p-3 space-y-1.5 group cursor-grab active:cursor-grabbing hover:shadow-sm transition-shadow select-none"
-                    style={{ borderColor: '#E8E0D8' }}>
-                    <div className="flex items-start justify-between gap-1">
-                      <button onClick={() => onView(don)} className="font-mono text-xs font-semibold truncate flex-1 text-left hover:underline" style={{ color: '#E8967A' }}>
-                        {don.receiptNumber || don.receipt_number || '—'}
-                      </button>
-                      {canEdit && (
-                        <button onClick={() => onEdit(don)} className="opacity-0 group-hover:opacity-100 p-0.5 rounded transition-all flex-shrink-0" style={{ color: '#E8967A' }}>
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                        </button>
-                      )}
-                    </div>
-                    <p className="text-xs text-ez-muted">{donor?.name || don.donorName || don.donor_name || '—'}</p>
-                    <p className="text-sm font-bold text-ez-dark">{formatCurrency(don.amount)}</p>
-                    <p className="text-xs text-ez-muted">{formatDate(don.date || don.donation_date)}</p>
+            ) : (
+              <>
+                <div className="px-3 pt-2 pb-2"
+                  style={{ backgroundColor: isOver ? meta.color + '18' : meta.bg, borderBottom: `1px solid ${meta.color}55` }}>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold tracking-wide flex-1" style={{ color: meta.color }}>{fund}</span>
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ backgroundColor: meta.color, color: '#fff' }}>{cards.length}</span>
                   </div>
-                );
-              })}
-              {cards.length === 0 && (
-                <div className="flex items-center justify-center h-20 border-2 border-dashed rounded-lg text-xs text-ez-muted"
-                  style={{ borderColor: isOver ? meta.color : '#E8E0D8' }}>
-                  {isOver ? 'Drop here' : 'No donations'}
+                  <p className="text-xs font-bold mt-1" style={{ color: meta.color }}>
+                    {total > 0 ? formatCurrency(total) : <span style={{ color: meta.color + '55' }}>—</span>}
+                  </p>
                 </div>
-              )}
-            </div>
+                <div className="flex-1 p-2 space-y-2 overflow-y-auto transition-colors"
+                  style={{ minHeight: '150px', backgroundColor: isOver ? meta.color + '11' : '#FAF7F4' }}>
+                  {cards.map(don => {
+                    const donor = donorMap[don.donorId || don.donor_id];
+                    return (
+                      <div key={don.id} draggable
+                        onDragStart={e => handleDragStart(e, don.id)}
+                        onDragEnd={() => { draggedId.current = null; setDragOverCol(null); }}
+                        className="bg-white rounded-lg border p-3 space-y-1.5 group cursor-grab active:cursor-grabbing hover:shadow-sm transition-shadow select-none"
+                        style={{ borderColor: '#E8E0D8' }}>
+                        <div className="flex items-start justify-between gap-1">
+                          <button onClick={() => onView(don)} className="font-mono text-xs font-semibold truncate flex-1 text-left hover:underline" style={{ color: '#E8967A' }}>
+                            {don.receiptNumber || don.receipt_number || '—'}
+                          </button>
+                          {canEdit && (
+                            <button onClick={() => onEdit(don)} className="opacity-0 group-hover:opacity-100 p-0.5 rounded transition-all flex-shrink-0" style={{ color: '#E8967A' }}>
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-xs text-ez-muted">{donor?.name || don.donorName || don.donor_name || '—'}</p>
+                        <p className="text-sm font-bold text-ez-dark">{formatCurrency(don.amount)}</p>
+                        <p className="text-xs text-ez-muted">{formatDate(don.date || don.donation_date)}</p>
+                      </div>
+                    );
+                  })}
+                  {cards.length === 0 && (
+                    <div className="flex items-center justify-center h-20 border-2 border-dashed rounded-lg text-xs text-ez-muted" style={{ borderColor: isOver ? meta.color : '#E8E0D8' }}>
+                      {isOver ? 'Drop here' : 'No donations'}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         );
       })}
+    </div>
     </div>
   );
 }
@@ -209,6 +272,7 @@ export function Donations() {
   const { donations, addDonationAndReturn, updateDonation, deleteDonation } = useDonations();
   const { hasPermission } = useAuth();
   const canCreate = hasPermission('donations', 'can_create');
+  const [addHovered, setAddHovered] = useState(false);
   const canEdit   = hasPermission('donations', 'can_edit');
   const canDelete = hasPermission('donations', 'can_delete');
   const { donors } = useDonors();
@@ -224,11 +288,13 @@ export function Donations() {
   const [dateFrom, setDateFrom]     = useState('');
   const [dateTo, setDateTo]         = useState('');
   const [page, setPage]             = useState(1);
+  const [pageSize, setPageSize]     = useState(10);
   const [modalOpen, setModalOpen]   = useState(false);
   const [editDonation, setEditDonation]     = useState(null);
   const [prefilledDate, setPrefilledDate]   = useState('');
   const [deleteTarget, setDeleteTarget]     = useState(null);
   const [selectedDonation, setSelectedDonation] = useState(null);
+  const detailRef = useRef(null);
   const [overrides, setOverrides]           = useState({});
   const [filtersOpen, setFiltersOpen]       = useState(false);
 
@@ -260,8 +326,8 @@ export function Donations() {
   }, [displayDonations, donorMap, search, fundFilter, modeFilter, g80Filter, dateFrom, dateTo]);
 
   const totalAmount = useMemo(() => filtered.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0), [filtered]);
-  const totalPages  = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated   = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages  = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginated   = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const allFunds = useMemo(() => {
     const s = new Set(donations.map(d => d.fundCategory || d.fund_category || 'General'));
@@ -271,7 +337,12 @@ export function Donations() {
 
   const openAdd = (prefill = {}) => { setEditDonation(null); setPrefilledDate(prefill.date || ''); setModalOpen(true); };
   const handleEdit  = d => { setEditDonation(d); setPrefilledDate(''); setModalOpen(true); };
-  const handleView  = d => { setSelectedDonation(d); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const handleView  = d => { setSelectedDonation(d); };
+  useEffect(() => {
+    if (selectedDonation && detailRef.current) {
+      detailRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [selectedDonation]);
 
   const handleFormSubmit = async (data) => {
     try {
@@ -320,23 +391,12 @@ export function Donations() {
 
   return (
     <div style={{ background: '#E8E2DB', minHeight: '100vh', padding: '20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Page Header */}
-      <div style={{ background: 'linear-gradient(135deg, #E8967A 0%, #d4806a 100%)', borderRadius: 14, padding: '18px 24px', boxShadow: '0 4px 16px rgba(232,150,122,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 700, margin: 0, fontFamily: 'serif' }}>Donations</h1>
-          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, margin: '3px 0 0' }}>{donations.length} total · {formatCurrency(donations.reduce((s, d) => s + (parseFloat(d.amount) || 0), 0))} raised</p>
-        </div>
-        {canCreate && (
-          <button onClick={() => openAdd()} style={{ background: '#fff', color: '#E8967A', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
-            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-            Add Donation
-          </button>
-        )}
-      </div>
 
       {selectedDonation && (
-        <DonationDetailPanel donation={selectedDonation} donor={donorMap[selectedDonation.donorId || selectedDonation.donor_id]}
-          expenses={expenses} onClose={() => setSelectedDonation(null)} onReceipt={handleReceipt} />
+        <div ref={detailRef}>
+          <DonationDetailPanel donation={selectedDonation} donor={donorMap[selectedDonation.donorId || selectedDonation.donor_id]}
+            expenses={expenses} onClose={() => setSelectedDonation(null)} onReceipt={handleReceipt} />
+        </div>
       )}
 
       {/* Filters */}
@@ -352,7 +412,6 @@ export function Donations() {
             <Select name="fundFilter" value={fundFilter} onChange={e => { setFundFilter(e.target.value); setPage(1); }} options={FUND_CATEGORIES.map(f => ({ value: f, label: f }))} placeholder="All Funds" className="w-40" />
             <Select name="modeFilter" value={modeFilter} onChange={e => { setModeFilter(e.target.value); setPage(1); }} options={PAYMENT_MODES.map(m => ({ value: m, label: m }))} placeholder="All Modes" className="w-40" />
             <Select name="g80Filter" value={g80Filter} onChange={e => { setG80Filter(e.target.value); setPage(1); }} options={[{ value: 'yes', label: '80G: Yes' }, { value: 'no', label: '80G: No' }]} placeholder="80G: All" className="w-36" />
-            <div className="ml-auto"><ViewSwitcher view={view} onChange={setView} /></div>
           </div>
           <div className="flex flex-wrap gap-3 items-center">
             <Input name="dateFrom" type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} className="w-40" />
@@ -366,44 +425,60 @@ export function Donations() {
         </div>}
       </div>
 
-      {view === 'kanban' ? (
-        <DonationKanban donations={filtered} donorMap={donorMap} allFunds={allFunds} onView={handleView} onEdit={handleEdit} onMove={canEdit ? handleMove : () => {}} canEdit={canEdit} />
-      ) : view === 'calendar' ? (
-        <CalendarGrid
-          items={filtered}
-          getDate={d => (d.date || d.donation_date || '').slice(0, 10)}
-          renderDot={d => {
-            const fund = d.fundCategory || d.fund_category || 'General';
-            const meta = FUND_META[fund] || DEFAULT_FUND_META;
-            const donor = donorMap[d.donorId || d.donor_id];
-            return { label: donor?.name || d.donorName || formatCurrency(d.amount), color: meta.color, bg: meta.bg };
-          }}
-          onItemClick={handleView}
-          onDayClick={handleDayClick}
-        />
-      ) : (
-        <>
-          {/* Donation List Card */}
-          <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.09)' }}>
-            <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <svg width="13" height="13" fill="none" stroke="#aaa" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Donation List</span>
-              </div>
-              <span style={{ color: '#666', fontSize: 11, background: '#3D3D3D', borderRadius: 12, padding: '2px 10px' }}>{filtered.length} total</span>
-            </div>
-            <DonationTable donations={paginated} donors={donors} onEdit={canEdit ? handleEdit : null} onDelete={canDelete ? d => setDeleteTarget(d) : null} onReceipt={handleReceipt} onView={handleView} />
+      {/* Content */}
+      <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.09)' }}>
+        <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <svg width="13" height="13" fill="none" stroke="#aaa" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+            <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Donation List</span>
+            <span style={{ color: '#666', fontSize: 11, background: '#3D3D3D', borderRadius: 12, padding: '2px 10px' }}>{filtered.length} total</span>
           </div>
-          {totalPages > 1 && (
-            <div style={{ background: '#fff', borderRadius: 14, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 2px 8px rgba(0,0,0,0.07)', border: '1px solid #E8E0D8' }}>
-              <p className="text-xs text-ez-muted">Page {page} of {totalPages}</p>
-              <div className="flex gap-2">
-                <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
-                <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</Button>
-              </div>
-            </div>
-          )}
-        </>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {canCreate && (
+              <button onClick={() => openAdd()} onMouseEnter={() => setAddHovered(true)} onMouseLeave={() => setAddHovered(false)}
+                title="Add Donation"
+                style={{ background: '#E8967A', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, transition: 'all 0.15s' }}>
+                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                {addHovered && <span style={{ whiteSpace: 'nowrap' }}>Add</span>}
+              </button>
+            )}
+            <ViewSwitcher view={view} onChange={setView} />
+          </div>
+        </div>
+        {view === 'kanban' ? (
+          <DonationKanban donations={filtered} donorMap={donorMap} allFunds={allFunds} onView={handleView} onEdit={handleEdit} onMove={canEdit ? handleMove : () => {}} canEdit={canEdit} />
+        ) : view === 'calendar' ? (
+          <CalendarGrid
+            items={filtered}
+            getDate={d => (d.date || d.donation_date || '').slice(0, 10)}
+            renderDot={d => {
+              const fund = d.fundCategory || d.fund_category || 'General';
+              const meta = FUND_META[fund] || DEFAULT_FUND_META;
+              const donor = donorMap[d.donorId || d.donor_id];
+              return { label: donor?.name || d.donorName || formatCurrency(d.amount), color: meta.color, bg: meta.bg };
+            }}
+            onItemClick={handleView}
+            onDayClick={handleDayClick}
+          />
+        ) : (
+          <DonationTable donations={paginated} donors={donors} onEdit={canEdit ? handleEdit : null} onDelete={canDelete ? d => setDeleteTarget(d) : null} onReceipt={handleReceipt} onView={handleView} />
+        )}
+      </div>
+
+      {view === 'list' && (
+        <div style={{ background: '#FEF9C3', borderRadius: 14, padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid #FDE047' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 12, color: '#713F12' }}>Page <strong>{page}</strong> of {totalPages} · {filtered.length} records</span>
+            <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
+              style={{ fontSize: 11, border: '1px solid #FDE047', borderRadius: 6, padding: '3px 6px', background: '#fff', color: '#713F12', fontWeight: 600, cursor: 'pointer' }}>
+              {PAGE_SIZE_OPTIONS.map(n => <option key={n} value={n}>{n} per page</option>)}
+            </select>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
+            <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</Button>
+          </div>
+        </div>
       )}
 
       <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); setEditDonation(null); setPrefilledDate(''); }}

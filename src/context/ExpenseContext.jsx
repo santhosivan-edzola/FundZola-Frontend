@@ -60,6 +60,10 @@ export function ExpenseProvider({ children }) {
     payment_mode:   data.payment_mode   ?? data.paymentMode   ?? null,
     approved_by:    data.approved_by    ?? data.approvedBy    ?? null,
     notes:          data.notes          ?? null,
+    program_id:     data.program_id     ?? data.programId     ?? null,
+    category_id:    data.category_id    ?? data.categoryId    ?? null,
+    expense_type:   data.expense_type   ?? data.expenseType   ?? 'Full',
+    allocations:    data.allocations    ?? undefined,
   });
 
   const addExpense = useCallback(async (data) => {
