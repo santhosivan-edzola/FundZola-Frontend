@@ -42,7 +42,7 @@ const allNavItems = [
   },
 ];
 
-export function Sidebar() {
+export function Sidebar({ isOpen, onClose }) {
   const { user, isAdmin, hasPermission, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -57,8 +57,15 @@ export function Sidebar() {
     navigate('/login');
   }
 
+  function handleNavClick() {
+    if (onClose) onClose();
+  }
+
   return (
-    <aside className="fixed top-0 left-0 h-screen w-48 flex flex-col z-30" style={{ backgroundColor: '#1A1A1A' }}>
+    <aside
+      className={`fixed top-0 left-0 h-screen w-48 flex flex-col z-30 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
+      style={{ backgroundColor: '#1A1A1A' }}
+    >
 
       {/* Logo */}
       <div className="px-4 py-4 border-b" style={{ borderColor: '#2a2a2a' }}>
@@ -80,6 +87,7 @@ export function Sidebar() {
             key={item.to}
             to={item.to}
             end={item.end}
+            onClick={handleNavClick}
             className={({ isActive }) =>
               `flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-all duration-150 ${isActive ? '' : 'hover:bg-ez-dark2'}`
             }

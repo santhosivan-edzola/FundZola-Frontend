@@ -84,7 +84,7 @@ export function Settings() {
             onChange={handleChange}
             placeholder="Street address, area"
           />
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Input
               label="City"
               name="city"
@@ -107,7 +107,7 @@ export function Settings() {
               placeholder="400001"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Phone"
               name="phone"
@@ -134,7 +134,7 @@ export function Settings() {
           <h2 className="text-base font-semibold text-gray-800 pb-2 border-b border-gray-100">
             Registration & Tax Details
           </h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Registration Number"
               name="registrationNumber"
@@ -158,7 +158,7 @@ export function Settings() {
           <h2 className="text-base font-semibold text-gray-800 pb-2 border-b border-gray-100">
             Authorized Signatory
           </h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Signatory Name"
               name="signatory"

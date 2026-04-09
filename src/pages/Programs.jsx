@@ -117,7 +117,7 @@ function ProgramForm({ initial, categories, onSave, onClose }) {
               style={{ background: '#141414', borderColor: '#333', color: '#eee' }} />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className={labelCls} style={{ color: '#aaa' }}>Start Date</label>
               <input type="date" className={inputCls} value={form.start_date} onChange={e => set('start_date', e.target.value)}
