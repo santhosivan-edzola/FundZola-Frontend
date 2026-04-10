@@ -1,7 +1,247 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import {
+  BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer,
+} from 'recharts';
 import { useCopilot } from '../hooks/useCopilot';
 import { useToast } from '../components/ui/Toast';
+import { useDonors } from '../hooks/useDonors';
+import { useDonations } from '../hooks/useDonations';
+import { useExpenses } from '../hooks/useExpenses';
+import { useDeals } from '../hooks/useDeals';
+
+// ── Chart colours ─────────────────────────────────────────────────────────────
+const CHART_COLORS = ['#E8967A', '#8ECFCA', '#7ab8e8', '#e8c07a', '#b07ae8', '#7ae87a', '#e87ab0', '#a0a0a0'];
+
+const fmtVal = (v) => {
+  if (v >= 10000000) return `₹${(v / 10000000).toFixed(1)}Cr`;
+  if (v >= 100000)   return `₹${(v / 100000).toFixed(1)}L`;
+  if (v >= 1000)     return `₹${(v / 1000).toFixed(1)}K`;
+  return v % 1 === 0 ? String(v) : Number(v).toFixed(2);
+};
+
+// ── 1. Try extracting explicit CHART_JSON block appended by AI ────────────────
+function extractChartJson(content) {
+  const idx = content.lastIndexOf('CHART_JSON:');
+  if (idx === -1) return { text: content, chart: null };
+  const jsonStr = content.slice(idx + 'CHART_JSON:'.length).trim();
+  const text    = content.slice(0, idx).trimEnd();
+  try {
+    const chart = JSON.parse(jsonStr);
+    if (!chart.data?.length || chart.data.length < 2) return { text, chart: null };
+    return { text, chart };
+  } catch {
+    return { text, chart: null };
+  }
+}
+
+// ── 2. Fallback: parse a markdown table from the raw text ─────────────────────
+function parseTableFallback(content) {
+  // Match markdown table: header row | separator row | data rows
+  const tableRe = /\|(.+)\|\s*\n\s*\|[-| :]+\|\s*\n((?:\s*\|.+\|\s*\n?)+)/;
+  const m = tableRe.exec(content);
+  if (!m) return null;
+
+  const headers = m[1].split('|').map(h => h.trim()).filter(Boolean);
+  const rows = m[2].trim().split('\n').map(r =>
+    r.split('|').map(c => c.trim()).filter(Boolean)
+  ).filter(r => r.length >= 2);
+
+  if (!rows.length || headers.length < 2) return null;
+
+  // Find numeric columns (skip index 0 which is the label)
+  const numCols = headers
+    .map((h, i) => ({ h, i }))
+    .filter(({ i }) => i > 0 && rows.some(r => {
+      const raw = (r[i] || '').replace(/[₹,%\s,]/g, '');
+      return raw !== '' && !isNaN(Number(raw)) && Number(raw) > 0;
+    }));
+
+  if (!numCols.length) return null;
+
+  const data = rows.map(row => {
+    const entry = { name: row[0] || '' };
+    numCols.forEach(({ h, i }) => {
+      const raw = (row[i] || '').replace(/[₹,%\s,]/g, '');
+      entry[h] = isNaN(Number(raw)) ? 0 : Number(raw);
+    });
+    return entry;
+  });
+
+  const keys = numCols.map(c => c.h);
+  const isPie = /breakdown|distribut|split|percentage|categor/i.test(content) && keys.length === 1 && data.length <= 8;
+  return { type: isPie ? 'pie' : 'bar', title: null, data, keys };
+}
+
+// ── Decide chart data from content ───────────────────────────────────────────
+function splitChartFromReply(content) {
+  // First try CHART_JSON block
+  const fromJson = extractChartJson(content);
+  if (fromJson.chart) return fromJson;
+
+  // Fallback: parse markdown table
+  const fallback = parseTableFallback(content);
+  return { text: content, chart: fallback };
+}
+
+// ── Chart renderer ────────────────────────────────────────────────────────────
+function CopilotChart({ chart }) {
+  if (!chart) return null;
+  const { type, title, data, keys = ['value'] } = chart;
+
+  if (type === 'pie') {
+    return (
+      <div style={{ marginTop: 16, background: '#FAF7F4', borderRadius: 12, padding: '16px 12px 12px' }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+          {title || 'Visual Summary'}
+        </p>
+        <ResponsiveContainer width="100%" height={260}>
+          <PieChart>
+            <Pie data={data} dataKey={keys[0]} nameKey="name" cx="50%" cy="50%" outerRadius={90}
+              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              labelLine={{ stroke: '#ccc', strokeWidth: 1 }}>
+              {data.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+            </Pie>
+            <Tooltip formatter={(v) => fmtVal(v)} contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #E8E0D8' }} />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  }
+
+  const bottomMargin = data.some(d => (d.name || '').length > 10) ? 60 : 32;
+  return (
+    <div style={{ marginTop: 16, background: '#FAF7F4', borderRadius: 12, padding: '16px 12px 12px' }}>
+      <p style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+        {title || 'Visual Summary'}
+      </p>
+      <ResponsiveContainer width="100%" height={260}>
+        <BarChart data={data} margin={{ top: 4, right: 16, left: 0, bottom: bottomMargin }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#E8E0D8" vertical={false} />
+          <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#6B7280' }}
+            angle={data.length > 4 ? -30 : 0}
+            textAnchor={data.length > 4 ? 'end' : 'middle'}
+            interval={0} />
+          <YAxis tick={{ fontSize: 10, fill: '#6B7280' }} tickFormatter={fmtVal} width={58} />
+          <Tooltip formatter={(v, name) => [fmtVal(v), name]}
+            contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #E8E0D8' }} />
+          {keys.length > 1 && <Legend wrapperStyle={{ fontSize: 11 }} />}
+          {keys.map((key, i) => (
+            <Bar key={key} dataKey={key} name={key}
+              fill={CHART_COLORS[i % CHART_COLORS.length]}
+              radius={[4, 4, 0, 0]} maxBarSize={52} />
+          ))}
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// ── Smart chart builder from live frontend data ───────────────────────────────
+function buildSmartChart(question, { donors, donations, expenses, deals }, fy) {
+  const q = question.toLowerCase();
+
+  // FY filter helper — FY "2026-27" => Apr 2026 – Mar 2027
+  function inFY(dateStr) {
+    if (!fy || !dateStr) return true;
+    const startYear = parseInt(fy.split('-')[0]);
+    const d = new Date(dateStr);
+    const fyStart = new Date(`${startYear}-04-01`);
+    const fyEnd   = new Date(`${startYear + 1}-03-31`);
+    return d >= fyStart && d <= fyEnd;
+  }
+
+  const fyDonations = donations.filter(d => inFY(d.date || d.donation_date || d.created_at));
+  const fyExpenses  = expenses.filter(e => inFY(e.date || e.expense_date || e.created_at));
+
+  // ── Top donors ──────────────────────────────────────────────────────────────
+  if (/top\s*\d*\s*donor|highest donor|best donor|donor rank|donor list/i.test(q)) {
+    const limit = parseInt(q.match(/top\s*(\d+)/i)?.[1] || '5');
+    const totals = {};
+    fyDonations.forEach(d => {
+      const key = d.donorName || d.donor_name || d.donorId || 'Unknown';
+      totals[key] = (totals[key] || 0) + Number(d.amount || 0);
+    });
+    const data = Object.entries(totals)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([name, value]) => ({ name: name.length > 14 ? name.slice(0, 13) + '…' : name, value }));
+    if (!data.length) return null;
+    return { type: 'bar', title: `Top ${Math.min(limit, data.length)} Donors by Donation`, data, keys: ['value'] };
+  }
+
+  // ── Spent vs received / comparison ─────────────────────────────────────────
+  if (/spent.*(receiv|collect)|receiv.*(spent|expens)|how much.*(spent|expens)|utilis|utiliz|vs receiv|vs collect/i.test(q)) {
+    const totalDonated = fyDonations.reduce((s, d) => s + Number(d.amount || 0), 0);
+    const totalSpent   = fyExpenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+    const data = [
+      { name: 'Received', value: totalDonated },
+      { name: 'Spent', value: totalSpent },
+      { name: 'Balance', value: Math.max(0, totalDonated - totalSpent) },
+    ];
+    return { type: 'bar', title: 'Received vs Spent', data, keys: ['value'] };
+  }
+
+  // ── Fund category breakdown ────────────────────────────────────────────────
+  if (/fund categor|categor.*donat|donat.*categor|which fund|fund.*highest|fund.*breakdown|fund.*split/i.test(q)) {
+    const totals = {};
+    fyDonations.forEach(d => {
+      const cat = d.fundCategory || d.fund_category || 'General';
+      totals[cat] = (totals[cat] || 0) + Number(d.amount || 0);
+    });
+    const data = Object.entries(totals)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, value]) => ({ name, value }));
+    if (!data.length) return null;
+    return { type: 'pie', title: 'Donations by Fund Category', data, keys: ['value'] };
+  }
+
+  // ── Expense category breakdown ─────────────────────────────────────────────
+  if (/expens.*categor|categor.*expens|expens.*breakdown|expens.*spend|most.*expens|highest.*expens/i.test(q)) {
+    const totals = {};
+    fyExpenses.forEach(e => {
+      const cat = e.category || e.fundCategory || e.fund_category || 'Other';
+      totals[cat] = (totals[cat] || 0) + Number(e.amount || 0);
+    });
+    const data = Object.entries(totals)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, value]) => ({ name, value }));
+    if (!data.length) return null;
+    return { type: 'pie', title: 'Expenses by Category', data, keys: ['value'] };
+  }
+
+  // ── Deal pipeline ──────────────────────────────────────────────────────────
+  if (/deal.*pipeline|pipeline|deal.*stage|stage.*deal/i.test(q)) {
+    const totals = {};
+    deals.forEach(d => {
+      const stage = d.stage || 'Unknown';
+      totals[stage] = (totals[stage] || 0) + Number(d.amount || 0);
+    });
+    const data = Object.entries(totals).map(([name, value]) => ({ name, value }));
+    if (!data.length) return null;
+    return { type: 'bar', title: 'Deal Pipeline by Stage', data, keys: ['value'] };
+  }
+
+  // ── Total donation / summary ───────────────────────────────────────────────
+  if (/total donat|donat.*receiv|receiv.*donat|how many donat|donation.*total/i.test(q)) {
+    const totals = {};
+    fyDonations.forEach(d => {
+      const key = d.donorName || d.donor_name || 'Unknown';
+      totals[key] = (totals[key] || 0) + Number(d.amount || 0);
+    });
+    const data = Object.entries(totals)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([name, value]) => ({ name: name.length > 14 ? name.slice(0, 13) + '…' : name, value }));
+    if (data.length < 2) return null;
+    return { type: 'bar', title: 'Donations by Donor', data, keys: ['value'] };
+  }
+
+  return null;
+}
 
 // ── FY helpers ────────────────────────────────────────────────────────────────
 function getCurrentFY() {
@@ -30,35 +270,39 @@ const SUGGESTED = [
 
 // ── Markdown renderer with table support ─────────────────────────────────────
 function MessageContent({ content }) {
+  const { text, chart } = splitChartFromReply(content);
   return (
-    <div style={{ fontSize: 13, lineHeight: 1.7, color: 'inherit' }}
-      className="copilot-md">
-      <ReactMarkdown
-        components={{
-          table: ({ children }) => (
-            <div style={{ overflowX: 'auto', margin: '8px 0' }}>
-              <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 12 }}>{children}</table>
-            </div>
-          ),
-          thead: ({ children }) => <thead style={{ background: '#F3F4F6' }}>{children}</thead>,
-          th: ({ children }) => <th style={{ padding: '6px 12px', textAlign: 'left', fontWeight: 600, color: '#374151', borderBottom: '1px solid #E5E7EB', whiteSpace: 'nowrap' }}>{children}</th>,
-          td: ({ children }) => <td style={{ padding: '5px 12px', borderBottom: '1px solid #F3F4F6', color: '#374151' }}>{children}</td>,
-          tr: ({ children }) => <tr style={{ borderBottom: '1px solid #F3F4F6' }}>{children}</tr>,
-          p: ({ children }) => <p style={{ margin: '4px 0' }}>{children}</p>,
-          ul: ({ children }) => <ul style={{ margin: '4px 0', paddingLeft: 20 }}>{children}</ul>,
-          li: ({ children }) => <li style={{ margin: '2px 0' }}>{children}</li>,
-          strong: ({ children }) => <strong style={{ fontWeight: 700 }}>{children}</strong>,
-          code: ({ children }) => <code style={{ background: '#F3F4F6', borderRadius: 3, padding: '1px 4px', fontSize: 11, fontFamily: 'Roboto, sans-serif' }}>{children}</code>,
-        }}
-      >
-        {content}
-      </ReactMarkdown>
+    <div>
+      <div style={{ fontSize: 13, lineHeight: 1.7, color: 'inherit' }} className="copilot-md">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            table: ({ children }) => (
+              <div style={{ overflowX: 'auto', margin: '8px 0' }}>
+                <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 12 }}>{children}</table>
+              </div>
+            ),
+            thead: ({ children }) => <thead style={{ background: '#F3F4F6' }}>{children}</thead>,
+            th: ({ children }) => <th style={{ padding: '6px 12px', textAlign: 'left', fontWeight: 600, color: '#374151', borderBottom: '1px solid #E5E7EB', whiteSpace: 'nowrap' }}>{children}</th>,
+            td: ({ children }) => <td style={{ padding: '5px 12px', borderBottom: '1px solid #F3F4F6', color: '#374151' }}>{children}</td>,
+            tr: ({ children }) => <tr style={{ borderBottom: '1px solid #F3F4F6' }}>{children}</tr>,
+            p: ({ children }) => <p style={{ margin: '4px 0' }}>{children}</p>,
+            ul: ({ children }) => <ul style={{ margin: '4px 0', paddingLeft: 20 }}>{children}</ul>,
+            li: ({ children }) => <li style={{ margin: '2px 0' }}>{children}</li>,
+            strong: ({ children }) => <strong style={{ fontWeight: 700 }}>{children}</strong>,
+            code: ({ children }) => <code style={{ background: '#F3F4F6', borderRadius: 3, padding: '1px 4px', fontSize: 11, fontFamily: 'Roboto, sans-serif' }}>{children}</code>,
+          }}
+        >
+          {text}
+        </ReactMarkdown>
+      </div>
+      <CopilotChart chart={chart} />
     </div>
   );
 }
 
 // ── Single message bubble ─────────────────────────────────────────────────────
-function MessageBubble({ msg, fy, orgName, zohoSynced }) {
+function MessageBubble({ msg, fy, orgName, zohoSynced, smartChart }) {
   const isUser = msg.role === 'user';
   const syncAt = msg.zoho_sync_at;
 
@@ -103,6 +347,7 @@ function MessageBubble({ msg, fy, orgName, zohoSynced }) {
           padding: '12px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
         }}>
           <MessageContent content={msg.content} />
+          {smartChart && <CopilotChart chart={smartChart} />}
         </div>
         {/* Context tags */}
         <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
@@ -133,13 +378,31 @@ export function Copilot() {
   const { conversations, messages, activeConvId, loading, sending,
           fetchConversations, loadConversation, sendMessage, newChat, deleteConversation } = useCopilot();
 
+  // Live data from frontend context
+  const { donors, fetchDonors }         = useDonors();
+  const { donations, fetchDonations }   = useDonations();
+  const { expenses, fetchExpenses }     = useExpenses();
+  const { deals, fetchDeals }           = useDeals();
+  const liveData = { donors, donations, expenses, deals };
+
   const [fy, setFy]           = useState(getCurrentFY);
   const [input, setInput]     = useState('');
   const [orgName, setOrgName] = useState('');
-  const messagesEndRef        = useRef(null);
-  const inputRef              = useRef(null);
+  // Charts keyed by assistant message id
+  const [msgCharts, setMsgCharts]   = useState({});
+  const pendingChart                = useRef(null);
+  const messagesEndRef              = useRef(null);
+  const inputRef                    = useRef(null);
 
   useEffect(() => { fetchConversations(); }, [fetchConversations]);
+
+  // Load live data so smart charts always have real numbers
+  useEffect(() => {
+    fetchDonors();
+    fetchDonations();
+    fetchExpenses();
+    fetchDeals();
+  }, []);
 
   useEffect(() => {
     // Fetch org name for context tags
@@ -151,10 +414,22 @@ export function Copilot() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, sending]);
 
+  // When a new assistant message arrives, attach the pending chart to it
+  useEffect(() => {
+    if (!pendingChart.current) return;
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg?.role === 'assistant') {
+      setMsgCharts(prev => ({ ...prev, [lastMsg.id]: pendingChart.current }));
+      pendingChart.current = null;
+    }
+  }, [messages]);
+
   async function handleSend(text) {
     const msg = (text || input).trim();
     if (!msg || sending) return;
     setInput('');
+    // Build smart chart from live frontend data for this question
+    pendingChart.current = buildSmartChart(msg, liveData, fy);
     try {
       await sendMessage(msg, fy);
     } catch (err) {
@@ -311,6 +586,7 @@ export function Copilot() {
                 fy={fy}
                 orgName={orgName}
                 zohoSynced={msg.role === 'assistant' ? msg.zoho_synced : undefined}
+                smartChart={msg.role === 'assistant' ? msgCharts[msg.id] : undefined}
               />
             ))}
 
