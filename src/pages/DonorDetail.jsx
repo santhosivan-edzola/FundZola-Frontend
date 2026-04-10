@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDonors } from '../hooks/useDonors';
 import { useDonations } from '../hooks/useDonations';
@@ -13,6 +13,7 @@ import { FundUtilizationBar } from '../components/dashboard/FundUtilizationBar';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { generateReceipt } from '../utils/pdfGenerator';
 import { useOrg } from '../hooks/useOrg';
+import { api } from '../utils/api';
 
 export function DonorDetail() {
   const { id } = useParams();
@@ -22,7 +23,23 @@ export function DonorDetail() {
   const { expenses } = useExpenses();
   const { orgSettings } = useOrg();
   const toast = useToast();
-  const [editOpen, setEditOpen] = useState(false);
+  const [editOpen, setEditOpen]         = useState(false);
+  const [expandedDonation, setExpanded] = useState(null);
+  const [breakdownData, setBreakdown]   = useState({});
+  const [loadingBreakdown, setLoadingBD] = useState(null);
+
+  const handleExpandDonation = useCallback(async (donationId) => {
+    if (expandedDonation === donationId) { setExpanded(null); return; }
+    setExpanded(donationId);
+    if (breakdownData[donationId]) return;
+    setLoadingBD(donationId);
+    try {
+      const res = await api.get(`/donations/${donationId}/category-breakdown`);
+      if (res.success) setBreakdown(prev => ({ ...prev, [donationId]: res.data }));
+    } finally {
+      setLoadingBD(null);
+    }
+  }, [expandedDonation, breakdownData]);
 
   const donor = getDonorById(id);
   const donorDonations = getDonationsByDonor(id);
@@ -164,21 +181,98 @@ export function DonorDetail() {
         </div>
       )}
 
-      {/* Donation History */}
+      {/* Donation History with category breakdown */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
         <div className="px-5 py-4 border-b border-gray-100">
           <h3 className="text-base font-semibold text-gray-800">
             Donation History ({donorDonations.length})
           </h3>
+          <p className="text-xs text-gray-400 mt-0.5">Click a donation to see category-wise breakdown</p>
         </div>
-        <div className="p-5">
-          <DonationTable
-            donations={donorDonations}
-            donors={[donor]}
-            onReceipt={handleReceipt}
-            onEdit={() => {}}
-            onDelete={() => {}}
-          />
+        <div>
+          {donorDonations.length === 0 && (
+            <p className="text-sm text-gray-400 px-5 py-8 text-center">No donations yet.</p>
+          )}
+          {donorDonations.map((donation) => {
+            const isExpanded = expandedDonation === donation.id;
+            const breakdown  = breakdownData[donation.id] || [];
+            const isLoading  = loadingBreakdown === donation.id;
+            return (
+              <div key={donation.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                {/* Donation row */}
+                <div
+                  className="flex items-center gap-3 px-5 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => handleExpandDonation(donation.id)}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold text-blue-600">{donation.receipt_number}</span>
+                      <span className="text-xs text-gray-400">{formatDate(donation.donation_date)}</span>
+                      <span style={{ fontSize: 11, background: '#F3F4F6', color: '#6B7280', borderRadius: 20, padding: '1px 8px' }}>
+                        {donation.payment_mode}
+                      </span>
+                      {donation.fund_category && (
+                        <span style={{ fontSize: 11, background: '#EFF6FF', color: '#1D4ED8', borderRadius: 20, padding: '1px 8px' }}>
+                          {donation.fund_category}
+                        </span>
+                      )}
+                    </div>
+                    {donation.purpose && <p className="text-xs text-gray-400 mt-0.5 truncate">{donation.purpose}</p>}
+                  </div>
+                  <span className="text-sm font-bold text-green-600 whitespace-nowrap">{formatCurrency(donation.amount)}</span>
+                  <svg width="14" height="14" fill="none" stroke="#9CA3AF" viewBox="0 0 24 24"
+                    style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s', flexShrink: 0 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+
+                {/* Category breakdown */}
+                {isExpanded && (
+                  <div style={{ background: '#F9FAFB', borderTop: '1px solid #F3F4F6', padding: '12px 20px 16px' }}>
+                    {isLoading ? (
+                      <p className="text-xs text-gray-400">Loading breakdown…</p>
+                    ) : breakdown.length === 0 ? (
+                      <p className="text-xs text-gray-400">No category allocations recorded for this donation.</p>
+                    ) : (
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Category Breakdown</p>
+                        <div className="space-y-3">
+                          {breakdown.map((cat) => {
+                            const pct = cat.allocated > 0 ? Math.min(100, (cat.spent / cat.allocated) * 100) : 0;
+                            return (
+                              <div key={cat.id}>
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="flex items-center gap-2">
+                                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: cat.color || '#6366F1', display: 'inline-block', flexShrink: 0 }} />
+                                    <span className="text-xs font-medium text-gray-700">{cat.name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-4 text-xs">
+                                    <span className="text-gray-500">Allocated: <strong className="text-gray-800">{formatCurrency(cat.allocated)}</strong></span>
+                                    <span className="text-gray-500">Spent: <strong style={{ color: cat.spent > cat.allocated ? '#DC2626' : '#059669' }}>{formatCurrency(cat.spent)}</strong></span>
+                                    <span className="text-gray-500">Remaining: <strong style={{ color: cat.remaining >= 0 ? '#2563EB' : '#DC2626' }}>{formatCurrency(cat.remaining)}</strong></span>
+                                  </div>
+                                </div>
+                                {/* Progress bar */}
+                                <div style={{ height: 6, background: '#E5E7EB', borderRadius: 99, overflow: 'hidden' }}>
+                                  <div style={{ height: '100%', width: `${pct}%`, background: pct >= 100 ? '#DC2626' : (cat.color || '#6366F1'), borderRadius: 99, transition: 'width 0.3s' }} />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {/* Totals row */}
+                        <div className="flex items-center justify-end gap-4 mt-3 pt-3 border-t border-gray-200 text-xs">
+                          <span className="text-gray-500">Total Donated: <strong className="text-green-600">{formatCurrency(donation.amount)}</strong></span>
+                          <span className="text-gray-500">Total Spent: <strong className="text-yellow-600">{formatCurrency(breakdown.reduce((s, c) => s + parseFloat(c.spent || 0), 0))}</strong></span>
+                          <span className="text-gray-500">Balance: <strong className="text-blue-600">{formatCurrency(parseFloat(donation.amount) - breakdown.reduce((s, c) => s + parseFloat(c.spent || 0), 0))}</strong></span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
