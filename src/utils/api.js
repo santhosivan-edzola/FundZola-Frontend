@@ -1,4 +1,4 @@
-const BASE_URL = 'https://fundzola-backend.onrender.com/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://fundzola-backend.onrender.com/api';
 
 function getToken() {
   try {
