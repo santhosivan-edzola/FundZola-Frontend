@@ -69,6 +69,7 @@ function DealForm({ initialData = {}, donors, onSubmit, onCancel, loading }) {
     }))
   );
   const [loadingProgram, setLoadingProgram] = useState(false);
+  const [programBudget, setProgramBudget] = useState(null);
 
   const dealAmount = parseFloat(form.amount) || 0;
   const totalAllocated = allocations.reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
@@ -89,30 +90,39 @@ function DealForm({ initialData = {}, donors, onSubmit, onCancel, loading }) {
     if (!form.programId) {
       setProgramAllocations([]);
       setAllocations([]);
+      setProgramBudget(null);
       return;
     }
     setLoadingProgram(true);
     api.get(`/programs/${form.programId}`)
       .then(res => {
-        if (res.success && res.data.allocations?.length) {
-          const progAllocs = res.data.allocations.map(a => ({
-            category_id:    String(a.category_id),
-            category_name:  a.category_name,
-            category_color: a.category_color || '#E8967A',
-            allocated_amount: Number(a.allocated_amount),
-            notes: '',
-          }));
-          setProgramAllocations(progAllocs);
-          // Only auto-populate if not editing with existing deal allocations
-          if (!initialData.allocations?.length) {
-            setAllocations(computeProportional(progAllocs, dealAmount));
+        if (res.success) {
+          const budget = Number(res.data.estimated_budget ?? res.data.estimatedBudget ?? 0);
+          setProgramBudget(budget || null);
+          if (res.data.allocations?.length) {
+            const progAllocs = res.data.allocations.map(a => ({
+              category_id:    String(a.category_id),
+              category_name:  a.category_name,
+              category_color: a.category_color || '#E8967A',
+              allocated_amount: Number(a.allocated_amount),
+              notes: '',
+            }));
+            setProgramAllocations(progAllocs);
+            // Only auto-populate if not editing with existing deal allocations
+            if (!initialData.allocations?.length) {
+              setAllocations(computeProportional(progAllocs, dealAmount));
+            }
+          } else {
+            setProgramAllocations([]);
+            setAllocations([]);
           }
         } else {
           setProgramAllocations([]);
           setAllocations([]);
+          setProgramBudget(null);
         }
       })
-      .catch(() => { setProgramAllocations([]); setAllocations([]); })
+      .catch(() => { setProgramAllocations([]); setAllocations([]); setProgramBudget(null); })
       .finally(() => setLoadingProgram(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.programId]);
@@ -139,6 +149,9 @@ function DealForm({ initialData = {}, donors, onSubmit, onCancel, loading }) {
     const errs = {};
     if (!form.donorId) errs.donorId = 'Donor is required';
     if (!form.title?.trim()) errs.title = 'Title is required';
+    if (form.programId && programBudget && dealAmount > programBudget) {
+      errs.amount = `Amount cannot exceed program budget of ₹${programBudget.toLocaleString('en-IN')}`;
+    }
     if (overAllocation) errs.allocations = `Allocated total (₹${totalAllocated.toLocaleString('en-IN')}) exceeds expected amount.`;
     return errs;
   };
@@ -179,8 +192,13 @@ function DealForm({ initialData = {}, donors, onSubmit, onCancel, loading }) {
         error={errors.title} required placeholder="e.g. Annual pledge from Ravi Kumar" />
 
       <div className="grid grid-cols-2 gap-3">
-        <Input label="Expected Amount (₹)" name="amount" type="number" value={form.amount}
-          onChange={handle} placeholder="0" />
+        <Input
+          label={programBudget ? `Expected Amount (₹) — max ₹${programBudget.toLocaleString('en-IN')}` : 'Expected Amount (₹)'}
+          name="amount" type="number" value={form.amount}
+          onChange={handle} placeholder="0"
+          max={programBudget || undefined}
+          error={errors.amount}
+        />
         <Input label="Expected Date" name="expectedDate" type="date" value={form.expectedDate}
           onChange={handle} />
       </div>
@@ -871,7 +889,11 @@ function ListView({ deals, onEdit, onDelete, onStageChange, onViewDonations }) {
 
 // ── Main Deals Page ────────────────────────────────────────────────────────────
 export function Deals() {
-  const { deals, loading, addDeal, updateDeal, updateDealStage, deleteDeal, receiveDeal, addDealDonation } = useDeals();
+  const { deals, loading, addDeal, updateDeal, updateDealStage, deleteDeal, receiveDeal, addDealDonation, fetchDeals } = useDeals();
+
+  useEffect(() => {
+    fetchDeals();
+  }, []);
   const { hasPermission } = useAuth();
   const canCreate = hasPermission('deals', 'can_create');
   const canEdit   = hasPermission('deals', 'can_edit');

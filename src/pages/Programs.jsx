@@ -297,7 +297,12 @@ function ProgramCard({ program, onEdit, onDelete }) {
 }
 
 export function Programs() {
-  const { programs, categories, loading, error, addProgram, updateProgram, deleteProgram, saveAllocations, fetchCategories } = usePrograms();
+  const { programs, categories, loading, error, addProgram, updateProgram, deleteProgram, saveAllocations, fetchCategories, fetchPrograms } = usePrograms();
+
+  useEffect(() => {
+    fetchPrograms();
+    fetchCategories();
+  }, []);
   const { hasPermission } = useAuth();
   const toast = useToast();
 

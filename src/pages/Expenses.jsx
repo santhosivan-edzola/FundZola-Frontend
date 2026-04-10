@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useExpenses } from '../hooks/useExpenses';
 import { useDonations } from '../hooks/useDonations';
@@ -139,7 +139,11 @@ function ExpenseKanban({ expenses, allCats, onEdit, onMove, canEdit }) {
 
 // ── Main Expenses Page ─────────────────────────────────────────────────────────
 export function Expenses() {
-  const { expenses, addExpense, updateExpense, deleteExpense } = useExpenses();
+  const { expenses, addExpense, updateExpense, deleteExpense, fetchExpenses } = useExpenses();
+
+  useEffect(() => {
+    fetchExpenses();
+  }, []);
   const { hasPermission } = useAuth();
   const canCreate = hasPermission('expenses', 'can_create');
   const canEdit   = hasPermission('expenses', 'can_edit');

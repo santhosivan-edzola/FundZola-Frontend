@@ -1,4 +1,4 @@
-import React from 'react';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useFundSummary } from '../hooks/useFundSummary';
 import { useDonations } from '../hooks/useDonations';
@@ -13,9 +13,15 @@ import { formatCurrency, formatDate } from '../utils/formatters';
 
 export function Dashboard() {
   const { byDonor, byFund, totals, loading: summaryLoading } = useFundSummary();
-  const { donations, loading: donationsLoading } = useDonations();
-  const { donors, loading: donorsLoading } = useDonors();
-  const { expenses, loading: expensesLoading } = useExpenses();
+  const { donations, loading: donationsLoading, fetchDonations } = useDonations();
+  const { donors, loading: donorsLoading, fetchDonors } = useDonors();
+  const { expenses, loading: expensesLoading, fetchExpenses } = useExpenses();
+
+  useEffect(() => {
+    fetchDonors();
+    fetchDonations();
+    fetchExpenses();
+  }, []);
 
   const isLoading = summaryLoading || donationsLoading || donorsLoading || expensesLoading;
 

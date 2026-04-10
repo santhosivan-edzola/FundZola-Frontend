@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useState, useCallback } from 'react';
 import { api } from '../utils/api';
 
 export const ExpenseContext = createContext(null);
@@ -42,10 +42,6 @@ export function ExpenseProvider({ children }) {
     }
   }, []);
 
-  // Load expenses on mount
-  useEffect(() => {
-    fetchExpenses();
-  }, [fetchExpenses]);
 
   /** Map camelCase form fields → snake_case API fields */
   const toApiPayload = (data) => ({

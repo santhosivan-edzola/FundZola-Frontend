@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useState, useCallback } from 'react';
 import { api } from '../utils/api';
 
 export const DealContext = createContext(null);
@@ -43,7 +43,6 @@ export function DealProvider({ children }) {
     }
   }, []);
 
-  useEffect(() => { fetchDeals(); }, [fetchDeals]);
 
   const toApiPayload = (data) => ({
     donor_id:      data.donor_id      ?? data.donorId,

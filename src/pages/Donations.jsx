@@ -269,7 +269,11 @@ function DonationKanban({ donations, donorMap, allFunds, onView, onEdit, onMove,
 
 // ── Main Donations Page ────────────────────────────────────────────────────────
 export function Donations() {
-  const { donations, addDonationAndReturn, updateDonation, deleteDonation } = useDonations();
+  const { donations, addDonationAndReturn, updateDonation, deleteDonation, fetchDonations } = useDonations();
+
+  useEffect(() => {
+    fetchDonations();
+  }, []);
   const { hasPermission } = useAuth();
   const canCreate = hasPermission('donations', 'can_create');
   const [addHovered, setAddHovered] = useState(false);

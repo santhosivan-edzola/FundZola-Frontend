@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useState, useCallback } from 'react';
 import { api } from '../utils/api';
 
 export const ProgramContext = createContext(null);
@@ -46,10 +46,6 @@ export function ProgramProvider({ children }) {
     } catch { /* silent */ }
   }, []);
 
-  useEffect(() => {
-    fetchPrograms();
-    fetchCategories();
-  }, [fetchPrograms, fetchCategories]);
 
   const toApiPayload = (data) => ({
     title: data.title,

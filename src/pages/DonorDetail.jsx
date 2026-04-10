@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDonors } from '../hooks/useDonors';
 import { useDonations } from '../hooks/useDonations';
@@ -17,9 +17,15 @@ import { useOrg } from '../hooks/useOrg';
 export function DonorDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getDonorById, updateDonor } = useDonors();
-  const { getDonationsByDonor } = useDonations();
-  const { expenses } = useExpenses();
+  const { getDonorById, updateDonor, fetchDonors } = useDonors();
+  const { getDonationsByDonor, fetchDonations } = useDonations();
+  const { expenses, fetchExpenses } = useExpenses();
+
+  useEffect(() => {
+    fetchDonors();
+    fetchDonations();
+    fetchExpenses();
+  }, []);
   const { orgSettings } = useOrg();
   const toast = useToast();
   const [editOpen, setEditOpen] = useState(false);

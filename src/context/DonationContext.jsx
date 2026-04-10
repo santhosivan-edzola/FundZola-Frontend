@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useState, useCallback } from 'react';
 import { api } from '../utils/api';
 
 export const DonationContext = createContext(null);
@@ -47,10 +47,6 @@ export function DonationProvider({ children }) {
     }
   }, []);
 
-  // Load donations on mount
-  useEffect(() => {
-    fetchDonations();
-  }, [fetchDonations]);
 
   /** Map camelCase form fields → snake_case API fields */
   const toApiPayload = (data) => ({

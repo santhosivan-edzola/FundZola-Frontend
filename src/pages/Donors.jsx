@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useDonors } from '../hooks/useDonors';
@@ -204,7 +204,11 @@ function DonorKanban({ donors, onEdit, onView, onMove, canEdit }) {
 
 // ── Main Donors Page ───────────────────────────────────────────────────────────
 export function Donors() {
-  const { donors, addDonor, updateDonor, deleteDonor, loading } = useDonors();
+  const { donors, addDonor, updateDonor, deleteDonor, loading, fetchDonors } = useDonors();
+
+  useEffect(() => {
+    fetchDonors();
+  }, []);
   const { hasPermission } = useAuth();
   const canCreate = hasPermission('donors', 'can_create');
   const [addHovered, setAddHovered] = useState(false);
