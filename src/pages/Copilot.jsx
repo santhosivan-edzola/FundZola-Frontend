@@ -48,7 +48,7 @@ function MessageContent({ content }) {
           ul: ({ children }) => <ul style={{ margin: '4px 0', paddingLeft: 20 }}>{children}</ul>,
           li: ({ children }) => <li style={{ margin: '2px 0' }}>{children}</li>,
           strong: ({ children }) => <strong style={{ fontWeight: 700 }}>{children}</strong>,
-          code: ({ children }) => <code style={{ background: '#F3F4F6', borderRadius: 3, padding: '1px 4px', fontSize: 11, fontFamily: 'monospace' }}>{children}</code>,
+          code: ({ children }) => <code style={{ background: '#F3F4F6', borderRadius: 3, padding: '1px 4px', fontSize: 11, fontFamily: 'Roboto, sans-serif' }}>{children}</code>,
         }}
       >
         {content}

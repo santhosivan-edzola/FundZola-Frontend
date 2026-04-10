@@ -34,7 +34,7 @@ function TempPasswordModal({ password, onClose }) {
         </p>
         <div style={{ background: '#FAE8DC', borderLeft: `4px solid ${CORAL}`, borderRadius: 6, padding: '14px 16px', marginBottom: 20 }}>
           <p style={{ margin: 0, fontSize: 13, color: DARK, fontWeight: 600 }}>Temporary Password</p>
-          <p style={{ margin: '6px 0 0', fontSize: 18, fontFamily: 'monospace', color: DARK, letterSpacing: '0.1em' }}>{password}</p>
+          <p style={{ margin: '6px 0 0', fontSize: 18, fontFamily: 'Roboto, sans-serif', color: DARK, letterSpacing: '0.1em' }}>{password}</p>
         </div>
         <p style={{ color: '#666', fontSize: 11, marginBottom: 20 }}>The user should change this after first login via Settings → Change Password.</p>
         <button onClick={onClose} style={{ background: CORAL, color: '#fff', border: 'none', borderRadius: 6, padding: '10px 24px', cursor: 'pointer', fontWeight: 600, fontSize: 13, width: '100%' }}>
@@ -80,7 +80,7 @@ function UserForm({ initial, onSave, onCancel, saving }) {
         <p style={{ color: '#555', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px' }}>Module Permissions</p>
         <div style={{ border: '1px solid #D5CFC8', borderRadius: 8, overflow: 'hidden' }}>
           {/* Header */}
-          <div style={{ display: 'grid', gridTemplateColumns: '140px repeat(4,1fr)', background: '#2D2D2D', padding: '8px 12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '140px repeat(4,1fr)', background: '#1A1A1A', padding: '8px 12px' }}>
             <span style={{ color: '#aaa', fontSize: 11, fontWeight: 600 }}>Module</span>
             {ACTIONS.map(a => <span key={a} style={{ color: '#aaa', fontSize: 11, fontWeight: 600, textAlign: 'center' }}>{ACTION_LABEL[a]}</span>)}
           </div>
@@ -205,7 +205,7 @@ export function Users() {
       {/* Add / Edit Panel */}
       {panel && (
         <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          <div style={{ background: '#2D2D2D', padding: '10px 20px' }}>
+          <div style={{ background: '#1A1A1A', padding: '10px 20px' }}>
             <h3 style={{ color: '#fff', margin: 0, fontSize: 14, fontWeight: 600 }}>
               {panel === 'add' ? 'Add New User' : `Edit — ${panel.name}`}
             </h3>
@@ -224,7 +224,7 @@ export function Users() {
 
       {/* Users Table */}
       <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-        <div style={{ background: '#2D2D2D', padding: '10px 20px' }}>
+        <div style={{ background: '#1A1A1A', padding: '10px 20px' }}>
           <h3 style={{ color: '#fff', margin: 0, fontSize: 14, fontWeight: 600 }}>User List</h3>
         </div>
         {loading ? (

@@ -30,6 +30,8 @@ export function Dashboard() {
   const donorMap = {};
   donors.forEach((d) => { donorMap[d.id] = d; });
 
+  const headerBg = '#1A1A1A';
+
   if (isLoading) return <LoadingSpinner message="Loading dashboard..." />;
 
   return (
@@ -37,27 +39,27 @@ export function Dashboard() {
 
       {/* Hero banner */}
       <div className="px-6 py-5 flex items-center justify-between"
-        style={{ background: 'linear-gradient(135deg, #1A1A1A 0%, #2a2a2a 100%)', borderRadius: 14 }}>
+        style={{ background: headerBg, borderRadius: 14 }}>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#8ECFCA' }}>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#fff', opacity: 0.75 }}>
             Fund Management
           </p>
-          <h2 className="font-serif text-2xl" style={{ color: '#FAE8DC' }}>
+          <h2 className="font-sans text-2xl" style={{ color: '#fff' }}>
             Welcome back
           </h2>
-          <p className="text-sm mt-1" style={{ color: '#999' }}>
+          <p className="text-sm mt-1" style={{ color: '#fff', opacity: 0.75 }}>
             {totals.totalDonors} donors &middot; {totals.totalDonations} donations recorded
           </p>
         </div>
         <div className="hidden sm:flex items-center gap-3">
           <Link to="/donations"
             className="text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
-            style={{ backgroundColor: '#E8967A', color: '#1A1A1A' }}>
+            style={{ backgroundColor: '#fff', color: '#E8967A' }}>
             + Add Donation
           </Link>
           <Link to="/donors"
             className="text-xs font-semibold px-4 py-2 rounded-lg border transition-colors"
-            style={{ borderColor: '#3a3a3a', color: '#ccc' }}>
+            style={{ borderColor: 'rgba(255,255,255,0.5)', color: '#fff' }}>
             Add Donor
           </Link>
         </div>
@@ -114,9 +116,9 @@ export function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Fund utilization */}
         <div className="lg:col-span-2" style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
-          <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Fund Utilization</span>
-            <Link to="/donations" style={{ color: '#E8967A', fontSize: 11 }}>View all →</Link>
+          <div style={{ background: headerBg, padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Fund Utilization</span>
+            <Link to="/donations" style={{ color: '#fff', fontSize: 11, opacity: 0.85 }}>View all →</Link>
           </div>
           <div style={{ padding: '20px' }}>
             <FundUtilizationBar byFund={byFund.slice(0, 6)} />
@@ -125,9 +127,9 @@ export function Dashboard() {
 
         {/* Top donors */}
         <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
-          <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Top Donors</span>
-            <Link to="/donors" style={{ color: '#E8967A', fontSize: 11 }}>View all →</Link>
+          <div style={{ background: headerBg, padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Top Donors</span>
+            <Link to="/donors" style={{ color: '#fff', fontSize: 11, opacity: 0.85 }}>View all →</Link>
           </div>
           <div style={{ padding: '20px' }}>
             {byDonor.length === 0 ? (
@@ -158,9 +160,9 @@ export function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent donations */}
         <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
-          <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Recent Donations</span>
-            <Link to="/donations" style={{ color: '#E8967A', fontSize: 11 }}>View all →</Link>
+          <div style={{ background: headerBg, padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Recent Donations</span>
+            <Link to="/donations" style={{ color: '#fff', fontSize: 11, opacity: 0.85 }}>View all →</Link>
           </div>
           {recentDonations.length === 0 ? (
             <p className="text-sm text-ez-muted text-center py-8">No donations yet</p>
@@ -189,9 +191,9 @@ export function Dashboard() {
 
         {/* Recent expenses */}
         <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
-          <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Recent Expenses</span>
-            <Link to="/expenses" style={{ color: '#E8967A', fontSize: 11 }}>View all →</Link>
+          <div style={{ background: headerBg, padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Recent Expenses</span>
+            <Link to="/expenses" style={{ color: '#fff', fontSize: 11, opacity: 0.85 }}>View all →</Link>
           </div>
           {recentExpenses.length === 0 ? (
             <p className="text-sm text-ez-muted text-center py-8">No expenses yet</p>
@@ -218,9 +220,9 @@ export function Dashboard() {
 
       {/* Donor summary table */}
       <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
-        <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Donor Utilization Summary</span>
-          <Link to="/donors" style={{ color: '#E8967A', fontSize: 11 }}>View all donors →</Link>
+        <div style={{ background: headerBg, padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Donor Utilization Summary</span>
+          <Link to="/donors" style={{ color: '#fff', fontSize: 11, opacity: 0.85 }}>View all donors →</Link>
         </div>
         <DonorSummaryTable byDonor={byDonor} limit={5} />
       </div>

@@ -70,7 +70,7 @@ function DonorFormPanel({ initialData = {}, onSubmit, onCancel, loading }) {
   return (
     <div className="bg-white rounded-xl border border-cream-200 shadow-card p-6">
       <div className="flex items-center justify-between mb-5">
-        <h2 className="font-serif text-lg text-ez-dark">{initialData.id ? 'Edit Donor' : 'Add New Donor'}</h2>
+        <h2 className="font-sans text-lg text-ez-dark">{initialData.id ? 'Edit Donor' : 'Add New Donor'}</h2>
         <button onClick={onCancel} className="text-ez-muted hover:text-ez-dark transition-colors p-1">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -304,10 +304,10 @@ export function Donors() {
 
       {/* ── Filters ─────────────────────────────────────────────── */}
       <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
-        <div onClick={() => setFiltersOpen(v => !v)} style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
-          <svg width="13" height="13" fill="none" stroke="#aaa" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M7 12h10M11 20h2" /></svg>
-          <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Filters</span>
-          <svg width="14" height="14" fill="none" stroke="#aaa" viewBox="0 0 24 24" style={{ marginLeft: 'auto', transition: 'transform 0.2s', transform: filtersOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+        <div onClick={() => setFiltersOpen(v => !v)} style={{ background: '#1A1A1A', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+          <svg width="13" height="13" fill="none" stroke="#fff" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M7 12h10M11 20h2" /></svg>
+          <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Filters</span>
+          <svg width="14" height="14" fill="none" stroke="#fff" viewBox="0 0 24 24" style={{ marginLeft: 'auto', transition: 'transform 0.2s', transform: filtersOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
         </div>
         {filtersOpen && <div style={{ padding: '14px 20px', display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
           <SearchBar value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
@@ -332,11 +332,11 @@ export function Donors() {
 
       {/* ── Content ─────────────────────────────────────────────── */}
       <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.09)' }}>
-        <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ background: '#1A1A1A', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <svg width="13" height="13" fill="none" stroke="#aaa" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" /></svg>
-            <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Donor List</span>
-            <span style={{ color: '#666', fontSize: 11, background: '#3D3D3D', borderRadius: 12, padding: '2px 10px' }}>{filtered.length} total</span>
+            <svg width="13" height="13" fill="none" stroke="#fff" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" /></svg>
+            <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Donor List</span>
+            <span style={{ color: '#fff', fontSize: 11, background: 'rgba(255,255,255,0.2)', borderRadius: 12, padding: '2px 10px' }}>{filtered.length} total</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {canCreate && (
@@ -398,7 +398,7 @@ export function Donors() {
                         </td>
                         <td style={{ padding: '12px 16px', color: '#666', fontSize: 13 }}>{donor.email || '—'}</td>
                         <td style={{ padding: '12px 16px', color: '#666', fontSize: 13 }}>{donor.phone || '—'}</td>
-                        <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: 12, color: '#888' }}>{donor.pan || donor.pan_number || '—'}</td>
+                        <td style={{ padding: '12px 16px', fontFamily: 'Roboto, sans-serif', fontSize: 12, color: '#888' }}>{donor.pan || donor.pan_number || '—'}</td>
                         <td style={{ padding: '12px 16px' }}><Badge variant="info" size="sm">{donor.donorType || donor.donor_type || '—'}</Badge></td>
                         <td style={{ padding: '12px 16px' }}><Badge variant={isActive !== false ? 'success' : 'gray'} size="sm">{isActive !== false ? 'Active' : 'Inactive'}</Badge></td>
                         <td style={{ padding: '12px 16px' }}>

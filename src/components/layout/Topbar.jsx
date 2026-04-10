@@ -63,7 +63,7 @@ export function Topbar({ onMenuToggle }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <h1 className="font-serif text-lg text-ez-dark">{getTitle()}</h1>
+        <h1 className="font-sans text-lg text-ez-dark">{getTitle()}</h1>
         {count !== null && (
           <span style={{ background: '#E8967A', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 20, padding: '2px 8px' }}>
             {count}

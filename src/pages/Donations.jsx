@@ -64,8 +64,8 @@ function DonationDetailPanel({ donation, donor, expenses, onClose, onReceipt }) 
     <div className="bg-white rounded-xl border border-cream-200 shadow-card overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-cream-200" style={{ backgroundColor: '#1A1A1A' }}>
         <div>
-          <p className="font-mono text-xs font-semibold" style={{ color: '#E8967A' }}>{donation.receiptNumber || donation.receipt_number || '—'}</p>
-          <h2 className="font-serif text-base text-white mt-0.5">Donation Details</h2>
+          <p className="font-sans text-xs font-semibold" style={{ color: '#E8967A' }}>{donation.receiptNumber || donation.receipt_number || '—'}</p>
+          <h2 className="font-sans text-base text-white mt-0.5">Donation Details</h2>
         </div>
         <button onClick={onClose} className="p-1.5 rounded-lg transition-colors" style={{ color: '#FAE8DC' }}
           onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
@@ -236,7 +236,7 @@ function DonationKanban({ donations, donorMap, allFunds, onView, onEdit, onMove,
                         className="bg-white rounded-lg border p-3 space-y-1.5 group cursor-grab active:cursor-grabbing hover:shadow-sm transition-shadow select-none"
                         style={{ borderColor: '#E8E0D8' }}>
                         <div className="flex items-start justify-between gap-1">
-                          <button onClick={() => onView(don)} className="font-mono text-xs font-semibold truncate flex-1 text-left hover:underline" style={{ color: '#E8967A' }}>
+                          <button onClick={() => onView(don)} className="font-sans text-xs font-semibold truncate flex-1 text-left hover:underline" style={{ color: '#E8967A' }}>
                             {don.receiptNumber || don.receipt_number || '—'}
                           </button>
                           {canEdit && (
@@ -401,10 +401,10 @@ export function Donations() {
 
       {/* Filters */}
       <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
-        <div onClick={() => setFiltersOpen(v => !v)} style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
-          <svg width="13" height="13" fill="none" stroke="#aaa" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M7 12h10M11 20h2" /></svg>
-          <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Filters</span>
-          <svg width="14" height="14" fill="none" stroke="#aaa" viewBox="0 0 24 24" style={{ marginLeft: 'auto', transition: 'transform 0.2s', transform: filtersOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+        <div onClick={() => setFiltersOpen(v => !v)} style={{ background: '#1A1A1A', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+          <svg width="13" height="13" fill="none" stroke="#fff" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M7 12h10M11 20h2" /></svg>
+          <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Filters</span>
+          <svg width="14" height="14" fill="none" stroke="#fff" viewBox="0 0 24 24" style={{ marginLeft: 'auto', transition: 'transform 0.2s', transform: filtersOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
         </div>
         {filtersOpen && <div style={{ padding: '14px 20px' }} className="space-y-3">
           <div className="flex flex-wrap gap-3 items-center">
@@ -427,11 +427,11 @@ export function Donations() {
 
       {/* Content */}
       <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.09)' }}>
-        <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ background: '#1A1A1A', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <svg width="13" height="13" fill="none" stroke="#aaa" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-            <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Donation List</span>
-            <span style={{ color: '#666', fontSize: 11, background: '#3D3D3D', borderRadius: 12, padding: '2px 10px' }}>{filtered.length} total</span>
+            <svg width="13" height="13" fill="none" stroke="#fff" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+            <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Donation List</span>
+            <span style={{ color: '#fff', fontSize: 11, background: 'rgba(255,255,255,0.2)', borderRadius: 12, padding: '2px 10px' }}>{filtered.length} total</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {canCreate && (

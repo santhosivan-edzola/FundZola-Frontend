@@ -64,7 +64,7 @@ export function Login() {
       <div style={{ width: '100%', maxWidth: 400 }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <h1 style={{ color: CORAL, fontSize: 32, fontWeight: 700, margin: 0, fontFamily: 'serif' }}>Fundzola</h1>
+          <h1 style={{ color: CORAL, fontSize: 32, fontWeight: 700, margin: 0, fontFamily: 'Roboto, sans-serif' }}>Fundzola</h1>
           <p style={{ color: TEAL, fontSize: 11, margin: '4px 0 0', letterSpacing: '0.12em', textTransform: 'uppercase' }}>by EdZola</p>
         </div>
 

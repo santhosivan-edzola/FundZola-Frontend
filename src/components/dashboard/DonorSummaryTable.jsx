@@ -32,7 +32,7 @@ export function DonorSummaryTable({ byDonor = [], limit = 10 }) {
             <tr key={row.donorId} className="hover:bg-gray-50 transition-colors">
               <td className="px-4 py-3 text-gray-400 text-xs">{idx + 1}</td>
               <td className="px-4 py-3 font-medium text-gray-800">{row.donorName}</td>
-              <td className="px-4 py-3 font-mono text-xs text-gray-500">{row.donorPAN || '-'}</td>
+              <td className="px-4 py-3 font-sans text-xs text-gray-500">{row.donorPAN || '-'}</td>
               <td className="px-4 py-3 text-right font-semibold text-gray-900">
                 {formatCurrency(row.totalDonated)}
               </td>

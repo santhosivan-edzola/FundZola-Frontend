@@ -29,7 +29,7 @@ export function Button({
     'inline-flex items-center justify-center gap-2 font-medium rounded-lg border transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed';
 
   const darkStyle = ['primary', 'success', 'teal'].includes(variant)
-    ? { backgroundColor: '#1A1A1A', color: '#FAE8DC' }
+    ? { background: '#1A1A1A', color: '#fff' }
     : {};
 
   const hoverClass = ['primary', 'success', 'teal'].includes(variant)

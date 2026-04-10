@@ -73,7 +73,7 @@ export function Sidebar({ isOpen, onClose }) {
           <img src="/edzola-logo.png" alt="EdZola" className="h-6 w-auto object-contain"
             onError={e => { e.target.style.display = 'none'; }} />
           <div>
-            <p className="font-serif text-sm leading-tight" style={{ color: '#E8967A' }}>Fundzola</p>
+            <p className="font-sans text-sm leading-tight" style={{ color: '#E8967A' }}>Fundzola</p>
             <p className="text-xs" style={{ color: '#8ECFCA', letterSpacing: '0.04em', fontSize: '10px' }}>by EdZola</p>
           </div>
         </div>

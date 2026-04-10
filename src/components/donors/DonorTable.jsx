@@ -43,7 +43,7 @@ export function DonorTable({ donors = [], onEdit, onDelete, onView }) {
                 </td>
                 <td className="px-4 py-3 text-gray-600">{donor.email || '-'}</td>
                 <td className="px-4 py-3 text-gray-600">{donor.phone || '-'}</td>
-                <td className="px-4 py-3 text-gray-600 font-mono text-xs">{donor.pan || '-'}</td>
+                <td className="px-4 py-3 text-gray-600 font-sans text-xs">{donor.pan || '-'}</td>
                 <td className="px-4 py-3">
                   <Badge variant="info" size="sm">{donor.donorType || '-'}</Badge>
                 </td>

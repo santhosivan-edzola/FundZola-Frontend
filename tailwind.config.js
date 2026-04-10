@@ -49,8 +49,8 @@ export default {
         },
       },
       fontFamily: {
-        sans:    ['"DM Sans"', 'system-ui', 'sans-serif'],
-        serif:   ['"DM Serif Display"', 'Georgia', 'serif'],
+        sans:    ['"Roboto"', 'system-ui', 'sans-serif'],
+        serif:   ['"Roboto"', 'Georgia', 'serif'],
       },
       borderRadius: {
         xl2: '1rem',

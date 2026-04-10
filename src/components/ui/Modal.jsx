@@ -32,11 +32,15 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
         className={`relative z-10 w-full ${sizeClasses[size] || sizeClasses.md} bg-white rounded-xl2 shadow-2xl flex flex-col max-h-[90vh]`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-cream-200 flex-shrink-0">
-          <h2 className="font-serif text-lg text-ez-dark">{title}</h2>
+        <div className="flex items-center justify-between px-6 py-4 flex-shrink-0"
+          style={{ background: '#1A1A1A', borderRadius: '0.75rem 0.75rem 0 0' }}>
+          <h2 className="font-sans text-base font-semibold" style={{ color: '#fff' }}>{title}</h2>
           <button
             onClick={onClose}
-            className="text-ez-muted hover:text-ez-dark transition-colors p-1.5 rounded-lg hover:bg-cream-100"
+            className="p-1.5 rounded-lg transition-colors"
+            style={{ color: 'rgba(255,255,255,0.7)', background: 'transparent' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             type="button"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

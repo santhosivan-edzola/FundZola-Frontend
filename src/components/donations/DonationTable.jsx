@@ -41,7 +41,7 @@ export function DonationTable({ donations = [], donors = [], onEdit, onDelete, o
                   <td>
                     <button
                       onClick={() => onView && onView(donation)}
-                      className="font-mono text-xs font-semibold hover:underline"
+                      className="font-sans text-xs font-semibold hover:underline"
                       style={{ color: '#E8967A' }}
                       title="View donation details & expenses"
                     >

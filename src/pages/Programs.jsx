@@ -87,53 +87,53 @@ function ProgramForm({ initial, categories, onSave, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }}>
-      <div className="rounded-xl shadow-2xl w-full max-w-xl mx-4 flex flex-col" style={{ background: '#1E1E1E', border: '1px solid #333', maxHeight: '90vh' }}>
-        <div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderBottom: '1px solid #2a2a2a' }}>
-          <h2 className="font-semibold text-sm" style={{ color: '#eee' }}>{initial ? 'Edit Program' : 'New Program'}</h2>
-          <button onClick={onClose} style={{ color: '#666', fontSize: 20, lineHeight: 1, background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
+      <div className="rounded-xl shadow-2xl w-full max-w-xl mx-4 flex flex-col" style={{ background: '#fff', border: '1px solid #EDE5DC', maxHeight: '90vh' }}>
+        <div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderBottom: '1px solid #EDE5DC' }}>
+          <h2 className="font-semibold text-sm" style={{ color: '#1A1A1A' }}>{initial ? 'Edit Program' : 'New Program'}</h2>
+          <button onClick={onClose} style={{ color: '#999', fontSize: 20, lineHeight: 1, background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
         </div>
         <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
-          {err && <p className="text-xs rounded-lg px-3 py-2" style={{ background: '#3B1212', color: '#FCA5A5' }}>{err}</p>}
+          {err && <p className="text-xs rounded-lg px-3 py-2" style={{ background: '#FEF2F2', color: '#EF4444', border: '1px solid #FECACA' }}>{err}</p>}
 
           <div>
-            <label className={labelCls} style={{ color: '#aaa' }}>Program Title <span style={{ color: '#E8967A' }}>*</span></label>
+            <label className={labelCls} style={{ color: '#555' }}>Program Title <span style={{ color: '#E8967A' }}>*</span></label>
             <input className={inputCls} value={form.title} onChange={e => set('title', e.target.value)}
               placeholder="e.g. School Infrastructure Drive 2026"
-              style={{ background: '#141414', borderColor: '#333', color: '#eee' }} />
+              style={{ background: '#F5F0EB', borderColor: '#EDE5DC', color: '#1A1A1A' }} />
           </div>
 
           <div>
-            <label className={labelCls} style={{ color: '#aaa' }}>Description</label>
+            <label className={labelCls} style={{ color: '#555' }}>Description</label>
             <textarea className={inputCls} rows={2} value={form.description} onChange={e => set('description', e.target.value)}
               placeholder="Brief description of the program…"
-              style={{ background: '#141414', borderColor: '#333', color: '#eee', resize: 'vertical' }} />
+              style={{ background: '#F5F0EB', borderColor: '#EDE5DC', color: '#1A1A1A', resize: 'vertical' }} />
           </div>
 
           <div>
-            <label className={labelCls} style={{ color: '#aaa' }}>Estimated Budget (₹) <span style={{ color: '#E8967A' }}>*</span></label>
+            <label className={labelCls} style={{ color: '#555' }}>Estimated Budget (₹) <span style={{ color: '#E8967A' }}>*</span></label>
             <input type="number" min="1" step="0.01" className={inputCls} value={form.estimated_budget}
               onChange={e => set('estimated_budget', e.target.value)}
               placeholder="0.00"
-              style={{ background: '#141414', borderColor: '#333', color: '#eee' }} />
+              style={{ background: '#F5F0EB', borderColor: '#EDE5DC', color: '#1A1A1A' }} />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className={labelCls} style={{ color: '#aaa' }}>Start Date</label>
+              <label className={labelCls} style={{ color: '#555' }}>Start Date</label>
               <input type="date" className={inputCls} value={form.start_date} onChange={e => set('start_date', e.target.value)}
-                style={{ background: '#141414', borderColor: '#333', color: '#eee' }} />
+                style={{ background: '#F5F0EB', borderColor: '#EDE5DC', color: '#1A1A1A' }} />
             </div>
             <div>
-              <label className={labelCls} style={{ color: '#aaa' }}>End Date</label>
+              <label className={labelCls} style={{ color: '#555' }}>End Date</label>
               <input type="date" className={inputCls} value={form.end_date} onChange={e => set('end_date', e.target.value)}
-                style={{ background: '#141414', borderColor: '#333', color: '#eee' }} />
+                style={{ background: '#F5F0EB', borderColor: '#EDE5DC', color: '#1A1A1A' }} />
             </div>
           </div>
 
           <div>
-            <label className={labelCls} style={{ color: '#aaa' }}>Status</label>
+            <label className={labelCls} style={{ color: '#555' }}>Status</label>
             <select className={inputCls} value={form.status} onChange={e => set('status', e.target.value)}
-              style={{ background: '#141414', borderColor: '#333', color: '#eee' }}>
+              style={{ background: '#F5F0EB', borderColor: '#EDE5DC', color: '#1A1A1A' }}>
               {['Active', 'Completed', 'On Hold', 'Cancelled'].map(s => (
                 <option key={s} value={s}>{s}</option>
               ))}
@@ -141,21 +141,21 @@ function ProgramForm({ initial, categories, onSave, onClose }) {
           </div>
 
           {/* ── Budget Allocation Subform ── */}
-          <div style={{ borderTop: '1px solid #2a2a2a', paddingTop: 16 }}>
+          <div style={{ borderTop: '1px solid #EDE5DC', paddingTop: 16 }}>
             <div className="flex items-center justify-between mb-3">
               <div>
-                <p className="text-xs font-semibold" style={{ color: '#eee' }}>Budget Allocation</p>
-                <p className="text-xs mt-0.5" style={{ color: '#666' }}>
+                <p className="text-xs font-semibold" style={{ color: '#1A1A1A' }}>Budget Allocation</p>
+                <p className="text-xs mt-0.5" style={{ color: '#888' }}>
                   {loadingAllocs ? 'Loading existing allocations…' : 'Split the budget across categories (optional)'}
                 </p>
               </div>
               {budget > 0 && (
                 <div className="text-right">
-                  <p className="text-xs" style={{ color: overBudget ? '#FCA5A5' : '#8ECFCA' }}>
+                  <p className="text-xs" style={{ color: overBudget ? '#EF4444' : '#16A34A' }}>
                     {overBudget ? '⚠ Over by' : 'Remaining'}: ₹{Math.abs(remaining).toLocaleString('en-IN')}
                   </p>
                   {totalAllocated > 0 && (
-                    <p className="text-xs" style={{ color: '#666' }}>Allocated: ₹{totalAllocated.toLocaleString('en-IN')}</p>
+                    <p className="text-xs" style={{ color: '#888' }}>Allocated: ₹{totalAllocated.toLocaleString('en-IN')}</p>
                   )}
                 </div>
               )}
@@ -163,9 +163,9 @@ function ProgramForm({ initial, categories, onSave, onClose }) {
 
             {/* Progress bar */}
             {budget > 0 && totalAllocated > 0 && (
-              <div className="h-1.5 rounded-full overflow-hidden mb-3" style={{ background: '#2a2a2a' }}>
+              <div className="h-1.5 rounded-full overflow-hidden mb-3" style={{ background: '#EDE5DC' }}>
                 <div className="h-full rounded-full transition-all"
-                  style={{ width: `${Math.min(100, (totalAllocated / budget) * 100)}%`, background: overBudget ? '#E87A7A' : '#E8967A' }} />
+                  style={{ width: `${Math.min(100, (totalAllocated / budget) * 100)}%`, background: overBudget ? '#EF4444' : '#E8967A' }} />
               </div>
             )}
 
@@ -174,7 +174,7 @@ function ProgramForm({ initial, categories, onSave, onClose }) {
                 <div key={i} className="flex gap-2 items-center">
                   <select value={row.category_id} onChange={e => setRow(i, 'category_id', e.target.value)}
                     className="flex-1 rounded-lg border px-2 py-1.5 text-xs focus:outline-none"
-                    style={{ background: '#141414', borderColor: '#333', color: row.category_id ? '#eee' : '#555' }}>
+                    style={{ background: '#F5F0EB', borderColor: '#EDE5DC', color: row.category_id ? '#1A1A1A' : '#aaa' }}>
                     <option value="">— Category —</option>
                     {categories.filter(c => c.is_active !== false).map(c => (
                       <option key={c.id} value={c.id}>{c.name}</option>
@@ -184,13 +184,13 @@ function ProgramForm({ initial, categories, onSave, onClose }) {
                     onChange={e => setRow(i, 'amount', e.target.value)}
                     placeholder="₹ Amount"
                     className="w-28 rounded-lg border px-2 py-1.5 text-xs focus:outline-none"
-                    style={{ background: '#141414', borderColor: '#333', color: '#eee' }} />
+                    style={{ background: '#F5F0EB', borderColor: '#EDE5DC', color: '#1A1A1A' }} />
                   <input value={row.notes} onChange={e => setRow(i, 'notes', e.target.value)}
                     placeholder="Notes (opt.)"
                     className="w-28 rounded-lg border px-2 py-1.5 text-xs focus:outline-none"
-                    style={{ background: '#141414', borderColor: '#333', color: '#eee' }} />
+                    style={{ background: '#F5F0EB', borderColor: '#EDE5DC', color: '#1A1A1A' }} />
                   <button type="button" onClick={() => removeRow(i)}
-                    style={{ color: '#666', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, lineHeight: 1, flexShrink: 0 }}>×</button>
+                    style={{ color: '#aaa', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, lineHeight: 1, flexShrink: 0 }}>×</button>
                 </div>
               ))}
             </div>
@@ -207,9 +207,9 @@ function ProgramForm({ initial, categories, onSave, onClose }) {
 
           <div className="flex gap-3 pt-1 flex-shrink-0">
             <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg text-xs font-medium"
-              style={{ background: '#2a2a2a', color: '#aaa', border: '1px solid #333' }}>Cancel</button>
+              style={{ background: '#F5F0EB', color: '#555', border: '1px solid #EDE5DC' }}>Cancel</button>
             <button type="submit" disabled={saving} className="flex-1 py-2 rounded-lg text-xs font-semibold"
-              style={{ background: '#E8967A', color: '#1A1A1A', opacity: saving ? 0.7 : 1 }}>
+              style={{ background: '#E8967A', color: '#fff', opacity: saving ? 0.7 : 1 }}>
               {saving ? 'Saving…' : (initial ? 'Update Program' : 'Create Program')}
             </button>
           </div>
@@ -222,7 +222,7 @@ function ProgramForm({ initial, categories, onSave, onClose }) {
 function ProgressBar({ value, max, color = '#E8967A' }) {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   return (
-    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#2a2a2a' }}>
+    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#EDE5DC' }}>
       <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
     </div>
   );
@@ -236,22 +236,22 @@ function ProgramCard({ program, onEdit, onDelete }) {
   const sc = STATUS_COLORS[program.status] || STATUS_COLORS.Active;
 
   return (
-    <div className="rounded-xl p-5 flex flex-col gap-3 cursor-pointer transition-all hover:scale-[1.01]"
-      style={{ background: '#1E1E1E', border: '1px solid #2a2a2a' }}
+    <div className="rounded-xl p-5 flex flex-col gap-3 cursor-pointer transition-all hover:shadow-md hover:scale-[1.01]"
+      style={{ background: '#fff', border: '1px solid #EDE5DC' }}
       onClick={() => navigate(`/programs/${program.id}`)}>
 
       {/* Header row */}
       <div className="flex items-start justify-between gap-2">
-        <span className="text-xs font-mono font-medium" style={{ color: '#8ECFCA' }}>{program.programCode}</span>
+        <span className="text-xs font-sans font-medium" style={{ color: '#8ECFCA' }}>{program.programCode}</span>
         <span className="text-xs font-semibold rounded-full px-2 py-0.5 flex-shrink-0"
           style={{ background: sc.bg, color: sc.text }}>{program.status}</span>
       </div>
 
       {/* Title */}
       <div>
-        <h3 className="text-sm font-semibold leading-snug" style={{ color: '#eee' }}>{program.title}</h3>
+        <h3 className="text-sm font-semibold leading-snug" style={{ color: '#1A1A1A' }}>{program.title}</h3>
         {program.description && (
-          <p className="text-xs mt-1 line-clamp-2" style={{ color: '#666' }}>{program.description}</p>
+          <p className="text-xs mt-1 line-clamp-2" style={{ color: '#888' }}>{program.description}</p>
         )}
       </div>
 
@@ -263,21 +263,21 @@ function ProgramCard({ program, onEdit, onDelete }) {
         </div>
         <ProgressBar value={program.collectedAmount} max={program.estimatedBudget} />
         <div className="flex items-center justify-between text-xs">
-          <span style={{ color: '#666' }}>{fmt(program.collectedAmount)}</span>
-          <span style={{ color: '#555' }}>of {fmt(program.estimatedBudget)}</span>
+          <span style={{ color: '#555' }}>{fmt(program.collectedAmount)}</span>
+          <span style={{ color: '#aaa' }}>of {fmt(program.estimatedBudget)}</span>
         </div>
       </div>
 
       {/* Stats row */}
-      <div className="flex items-center gap-4 text-xs pt-1" style={{ borderTop: '1px solid #2a2a2a', paddingTop: 10 }}>
-        <span style={{ color: '#666' }}>
-          <span className="font-semibold" style={{ color: '#aaa' }}>{program.totalDeals}</span> deal{program.totalDeals !== 1 ? 's' : ''}
+      <div className="flex items-center gap-4 text-xs pt-1" style={{ borderTop: '1px solid #EDE5DC', paddingTop: 10 }}>
+        <span style={{ color: '#888' }}>
+          <span className="font-semibold" style={{ color: '#1A1A1A' }}>{program.totalDeals}</span> deal{program.totalDeals !== 1 ? 's' : ''}
         </span>
-        <span style={{ color: '#666' }}>
-          <span className="font-semibold" style={{ color: '#aaa' }}>{program.allocationCount}</span> categor{program.allocationCount !== 1 ? 'ies' : 'y'}
+        <span style={{ color: '#888' }}>
+          <span className="font-semibold" style={{ color: '#1A1A1A' }}>{program.allocationCount}</span> categor{program.allocationCount !== 1 ? 'ies' : 'y'}
         </span>
         {program.endDate && (
-          <span className="ml-auto" style={{ color: '#555' }}>
+          <span className="ml-auto" style={{ color: '#aaa' }}>
             Ends {new Date(program.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
           </span>
         )}
@@ -286,11 +286,11 @@ function ProgramCard({ program, onEdit, onDelete }) {
       {/* Actions */}
       <div className="flex gap-2" onClick={e => e.stopPropagation()}>
         <button onClick={() => onEdit(program)}
-          className="flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors"
-          style={{ background: '#2a2a2a', color: '#aaa', border: '1px solid #333' }}>Edit</button>
+          className="flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-cream-100"
+          style={{ background: '#F5F0EB', color: '#555', border: '1px solid #EDE5DC' }}>Edit</button>
         <button onClick={() => onDelete(program)}
-          className="flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors"
-          style={{ background: '#2a2a2a', color: '#EF4444', border: '1px solid #3B1212' }}>Delete</button>
+          className="flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-red-50"
+          style={{ background: '#FEF2F2', color: '#EF4444', border: '1px solid #FECACA' }}>Delete</button>
       </div>
     </div>
   );
@@ -356,10 +356,10 @@ export function Programs() {
 
       {/* Search + status tabs */}
       <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
-        <div onClick={() => setFiltersOpen(v => !v)} style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
-          <svg width="13" height="13" fill="none" stroke="#aaa" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M7 12h10M11 20h2" /></svg>
-          <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Filters</span>
-          <svg width="14" height="14" fill="none" stroke="#aaa" viewBox="0 0 24 24" style={{ marginLeft: 'auto', transition: 'transform 0.2s', transform: filtersOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+        <div onClick={() => setFiltersOpen(v => !v)} style={{ background: '#1A1A1A', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+          <svg width="13" height="13" fill="none" stroke="#fff" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M7 12h10M11 20h2" /></svg>
+          <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Filters</span>
+          <svg width="14" height="14" fill="none" stroke="#fff" viewBox="0 0 24 24" style={{ marginLeft: 'auto', transition: 'transform 0.2s', transform: filtersOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
         </div>
         {filtersOpen && <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
@@ -386,8 +386,8 @@ export function Programs() {
       {/* Summary bar */}
       {programs.length > 0 && (
         <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
-          <div style={{ background: '#2D2D2D', padding: '10px 20px' }}>
-            <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Summary</span>
+          <div style={{ background: '#1A1A1A', padding: '10px 20px' }}>
+            <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Summary</span>
           </div>
           <div style={{ padding: '14px 20px' }}>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -397,9 +397,9 @@ export function Programs() {
                 { label: 'Total Budget', value: fmt(programs.reduce((s, p) => s + p.estimatedBudget, 0)) },
                 { label: 'Total Collected', value: fmt(programs.reduce((s, p) => s + p.collectedAmount, 0)) },
               ].map(s => (
-                <div key={s.label} className="rounded-lg px-4 py-3" style={{ background: '#1E1E1E', border: '1px solid #2a2a2a' }}>
-                  <p className="text-xs" style={{ color: '#666' }}>{s.label}</p>
-                  <p className="text-sm font-bold mt-0.5" style={{ color: '#eee' }}>{s.value}</p>
+                <div key={s.label} className="rounded-lg px-4 py-3" style={{ background: '#F5F0EB', border: '1px solid #EDE5DC' }}>
+                  <p className="text-xs" style={{ color: '#888' }}>{s.label}</p>
+                  <p className="text-sm font-bold mt-0.5" style={{ color: '#1A1A1A' }}>{s.value}</p>
                 </div>
               ))}
             </div>
@@ -431,10 +431,10 @@ export function Programs() {
       )}
       {!loading && !error && filtered.length > 0 && (
         <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.09)', overflow: 'hidden' }}>
-          <div style={{ background: '#2D2D2D', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ background: '#1A1A1A', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ color: '#aaa', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Programs</span>
-              <span style={{ color: '#666', fontSize: 11, background: '#3D3D3D', borderRadius: 12, padding: '2px 10px' }}>{filtered.length} total</span>
+              <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Programs</span>
+              <span style={{ color: '#fff', fontSize: 11, background: 'rgba(255,255,255,0.2)', borderRadius: 12, padding: '2px 10px' }}>{filtered.length} total</span>
             </div>
             {canCreate && (
               <button onClick={handleOpenAdd} onMouseEnter={() => setAddHovered(true)} onMouseLeave={() => setAddHovered(false)}
@@ -465,14 +465,14 @@ export function Programs() {
       {/* Delete confirm */}
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }}>
-          <div className="rounded-xl p-6 w-full max-w-sm mx-4" style={{ background: '#1E1E1E', border: '1px solid #333' }}>
-            <h3 className="text-sm font-semibold mb-2" style={{ color: '#eee' }}>Delete Program?</h3>
+          <div className="rounded-xl p-6 w-full max-w-sm mx-4" style={{ background: '#fff', border: '1px solid #EDE5DC' }}>
+            <h3 className="text-sm font-semibold mb-2" style={{ color: '#1A1A1A' }}>Delete Program?</h3>
             <p className="text-xs mb-5" style={{ color: '#888' }}>
-              "<span style={{ color: '#eee' }}>{confirmDelete.title}</span>" and all its budget allocations will be permanently deleted. Linked deals will remain but lose their program association.
+              "<span style={{ color: '#1A1A1A', fontWeight: 600 }}>{confirmDelete.title}</span>" and all its budget allocations will be permanently deleted. Linked deals will remain but lose their program association.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setConfirmDelete(null)} className="flex-1 py-2 rounded-lg text-xs"
-                style={{ background: '#2a2a2a', color: '#aaa', border: '1px solid #333' }}>Cancel</button>
+                style={{ background: '#F5F0EB', color: '#555', border: '1px solid #EDE5DC' }}>Cancel</button>
               <button onClick={handleDelete} disabled={deleting} className="flex-1 py-2 rounded-lg text-xs font-semibold"
                 style={{ background: '#EF4444', color: '#fff', opacity: deleting ? 0.7 : 1 }}>
                 {deleting ? 'Deleting…' : 'Delete'}
